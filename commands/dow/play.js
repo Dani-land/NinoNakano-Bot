@@ -135,7 +135,7 @@ async function sendPlayableVideo(client, m, dl, title, thumbBuffer, extraHeaders
   )
 }
 
-async function resolveAudioDownload(url) {
+export async function resolveAudioDownload(url) {
   const sv = new SaveTube()
   return sv.download(url, true)
 }
