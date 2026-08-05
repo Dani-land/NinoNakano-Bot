@@ -67,7 +67,7 @@ async function startupConsoleAnimation() {
 
   // Keep logs usable when stdout is redirected to a file or a process manager.
   if (!process.stdout.isTTY) {
-    console.log(chalk.cyan('  [o_o] MIKUBOT iniciando...'))
+    console.log(chalk.cyan('  [o_o] NINO NAKANO iniciando...'))
     return
   }
 
@@ -94,7 +94,7 @@ async function startupConsoleAnimation() {
   }
 
   process.stdout.write('\r\x1b[2K')
-  console.log(chalk.green('  ✓ Robot listo, iniciando MIKUBOT...\n'))
+  console.log(chalk.green('  ✓ Robot listo, iniciando NINO NAKANO...\n'))
 }
 
 export async function uPLoader() {
@@ -120,7 +120,7 @@ export async function uPLoader() {
     process.stdout.write(
       '\x1b[2J\x1b[0f' +
       border(`\n  ╔${'═'.repeat(BAR_SIZE + 10)}╗\n`) +
-      border('  ║') + chalk.bold.white(`    ✦ MIKUWABOT-MD  v${VER}`.padEnd(BAR_SIZE + 8)) + border('  ║\n') +
+      border('  ║') + chalk.bold.white(`    ✦ NINO NAKANO-MD  v${VER}`.padEnd(BAR_SIZE + 8)) + border('  ║\n') +
       border('  ║') + chalk.gray(`    ☕ made by ☕︎Danielrxz`.padEnd(BAR_SIZE + 8)) + border('  ║\n') +
       border(`  ╚${'═'.repeat(BAR_SIZE + 10)}╝\n\n`) +
        `  ${ROBOT_FRAMES[i % ROBOT_FRAMES.length]} ${bar} ${pct}\n\n` +
@@ -131,7 +131,7 @@ export async function uPLoader() {
 
   console.clear()
 
-  cfonts.say('MIKU|BOT', {
+  cfonts.say('NINO|NAKANO', {
     font: 'block',
     align: 'center',
     colors: ['cyan', 'magenta'],
@@ -356,7 +356,7 @@ async function startBot() {
 
       console.log('\n' + boxen(
         chalk.greenBright.bold('  ✦ BOT CONECTADO EXITOSAMENTE ✦\n\n') +
-        row('🤖', 'Bot', 'MikuWabot-MD') + '\n' +
+        row('🤖', 'Bot', 'Nino Nakano-MD') + '\n' +
         row('📱', 'Número', botNum) + '\n' +
         row('⚙️ ', 'Versión', global.version?.replace('^', '') || '3.1.0') + '\n' +
         row('🟢', 'Node.js', process.version) + '\n' +

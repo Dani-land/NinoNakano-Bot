@@ -1,7 +1,7 @@
 {
   "name": "NinoNakano-md",
   "version": "3.1.9",
-  "description": "MikuWabot WhatsApp bot using Baileys",
+  "description": "Nino Nakano WhatsApp bot using Baileys",
   "main": "index.js",
   "type": "module",
   "scripts": {
