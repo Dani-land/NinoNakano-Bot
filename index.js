@@ -58,6 +58,45 @@ function normalizePhoneForPairing(input) {
   return s
 }
 
+const ROBOT_FRAMES = ['[o_o]', '[^_^]', '[o_o]', '[^_^]']
+
+async function startupConsoleAnimation() {
+  const totalFrames = 18
+  const trackWidth = Math.max(12, Math.min(34, (process.stdout.columns || 80) - 46))
+  const messages = ['Despertando al robot', 'Cargando módulos', 'Preparando comandos', 'Conectando servicios']
+
+  // Keep logs usable when stdout is redirected to a file or a process manager.
+  if (!process.stdout.isTTY) {
+    console.log(chalk.cyan('  [o_o] MIKUBOT iniciando...'))
+    return
+  }
+
+  for (let i = 0; i < totalFrames; i++) {
+    const progress = Math.round((i / (totalFrames - 1)) * 100)
+    const robotPosition = Math.round(
+      (i <= totalFrames / 2 ? i : totalFrames - i) / (totalFrames / 2) *
+      (trackWidth - ROBOT_FRAMES[0].length)
+    )
+    const track = ' '.repeat(robotPosition) +
+      ROBOT_FRAMES[i % ROBOT_FRAMES.length] +
+      ' '.repeat(Math.max(0, trackWidth - robotPosition - ROBOT_FRAMES[0].length))
+    const filled = Math.round((progress / 100) * 20)
+    const bar = chalk.cyan('█'.repeat(filled)) + chalk.gray('░'.repeat(20 - filled))
+    const dots = '.'.repeat((i % 4) + 1).padEnd(4, ' ')
+    const message = messages[Math.min(Math.floor(i / 5), messages.length - 1)]
+
+    process.stdout.write(
+      '\r\x1b[2K' +
+      `  ${track}  ${bar} ${String(progress).padStart(3)}%  ` +
+      chalk.magenta(`${message}${dots}`)
+    )
+    await new Promise(resolve => setTimeout(resolve, 100))
+  }
+
+  process.stdout.write('\r\x1b[2K')
+  console.log(chalk.green('  ✓ Robot listo, iniciando MIKUBOT...\n'))
+}
+
 export async function uPLoader() {
   const TOTAL_TIME = 4500
   const STEPS = 100
@@ -84,7 +123,7 @@ export async function uPLoader() {
       border('  ║') + chalk.bold.white(`    ✦ MIKUWABOT-MD  v${VER}`.padEnd(BAR_SIZE + 8)) + border('  ║\n') +
       border('  ║') + chalk.gray(`    ☕ made by ☕︎Danielrxz`.padEnd(BAR_SIZE + 8)) + border('  ║\n') +
       border(`  ╚${'═'.repeat(BAR_SIZE + 10)}╝\n\n`) +
-      `  ${bar} ${pct}\n\n` +
+       `  ${ROBOT_FRAMES[i % ROBOT_FRAMES.length]} ${bar} ${pct}\n\n` +
       `  ${phase.label}\n`
     )
     await new Promise(r => setTimeout(r, TOTAL_TIME / STEPS))
@@ -474,6 +513,7 @@ function showFatalError(err, title = 'FATAL ERROR') {
 
 ;(async () => {
   try {
+    await startupConsoleAnimation()
     global.loadDatabase()
     log.success('Base de datos cargada correctamente.')
 
