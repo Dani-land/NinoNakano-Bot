@@ -150,7 +150,7 @@ cd && cd MIKUWABOT && npm start
 > *Detén el bot (ctrl + "z" + ENTER) hasta ver algo verde parecido a `MIKUWABOT $`, luego:*
  
 ```bash 
-cd && cd MIKUWABOT && rm -rf Sessions/Owner && npm start
+cd && cd NinoNakano-Bot && rm -rf Sessions/Owner && npm start
 ```
 </details>
 
@@ -163,11 +163,6 @@ cd && cd MIKUWABOT && rm -rf Sessions/Owner && npm start
 | Canal de WhatsApp | [Unirse](https://whatsapp.com/channel/0029VbBUzJ6DzgT8o9NiMq2b) |
 
 ---
-
-### ꒰୨୧꒱ Agradecimientos
-Este proyecto no sería lo mismo sin ellos. Gracias por aportar tiempo, ideas y ganas ✿
-
-[![Yuliethxz](https://github.com/DevYuliethxyz.png?size=100)](https://github.com/DevYuliethxyz) [![Yosue](https://github.com/yosue891.png?size=100)](https://github.com/yosue891) [![M4TEO FX](https://github.com/M4TEO-FX.png?size=100)](https://github.com/M4TEO-FX)
 
 ### ❀ Propietario
 [![Danielrxz](https://github.com/Dani-land.png?size=120)](https://github.com/Dani-land)
