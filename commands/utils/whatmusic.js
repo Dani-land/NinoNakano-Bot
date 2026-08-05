@@ -1,5 +1,3 @@
-import axios from 'axios'
-import FormData from 'form-data'
 import fs from 'fs/promises'
 import os from 'os'
 import path from 'path'
@@ -9,9 +7,9 @@ import yts from 'yt-search'
 import { resolveAudioDownload } from '../dow/play.js'
 
 const execFileAsync = promisify(execFile)
-const AUDD_URL = 'https://api.audd.io/'
 const MAX_VIDEO_SECONDS = 120
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+let shazamApi
 
 function cleanFileName(value) {
   return String(value || 'audio encontrado')
@@ -23,7 +21,7 @@ function cleanFileName(value) {
 
 async function extractAudio(videoBuffer, workDir) {
   const inputPath = path.join(workDir, 'input-video')
-  const outputPath = path.join(workDir, 'audio.mp3')
+  const outputPath = path.join(workDir, 'audio.pcm')
 
   await fs.writeFile(inputPath, videoBuffer)
   await execFileAsync(
@@ -36,36 +34,32 @@ async function extractAudio(videoBuffer, workDir) {
       '-vn',
       '-ac', '1',
       '-ar', '16000',
-      '-b:a', '128k',
+      '-f', 's16le',
+      '-acodec', 'pcm_s16le',
       outputPath
     ],
     { timeout: 90_000, maxBuffer: 2 * 1024 * 1024 }
   )
 
-  return fs.readFile(outputPath)
+  const { s16LEToSamplesArray } = await getShazamApi()
+  return s16LEToSamplesArray(Uint8Array.from(await fs.readFile(outputPath)))
 }
 
-async function identifySong(audioBuffer) {
-  const form = new FormData()
-  form.append('api_token', process.env.AUDD_API_TOKEN)
-  form.append('return', 'apple_music,spotify')
-  form.append('file', audioBuffer, {
-    filename: 'audio.mp3',
-    contentType: 'audio/mpeg'
-  })
+async function identifySong(samples) {
+  const { Shazam } = await getShazamApi()
+  const result = await new Shazam('America/Mexico_City').recognizeSong(samples)
+  if (!result) throw new Error('No pude reconocer la canción en el audio enviado.')
+  return result
+}
 
-  const response = await axios.post(AUDD_URL, form, {
-    headers: form.getHeaders(),
-    timeout: 60_000,
-    maxContentLength: MAX_UPLOAD_BYTES,
-    maxBodyLength: MAX_UPLOAD_BYTES
-  })
-
-  if (response.data?.status !== 'success' || !response.data?.result) {
-    throw new Error('No pude reconocer la canción en el audio enviado.')
+async function getShazamApi() {
+  if (shazamApi) return shazamApi
+  try {
+    shazamApi = await import('shazam-api')
+    return shazamApi
+  } catch {
+    throw new Error('Falta instalar el reconocedor público. Ejecuta: npm install shazam-api@0.3.0')
   }
-
-  return response.data.result
 }
 
 function getSongSearchText(song) {
@@ -92,12 +86,6 @@ export default {
       return m.reply(`✘ El vídeo es demasiado largo. Máximo permitido: ${MAX_VIDEO_SECONDS} segundos.`)
     }
 
-    if (!process.env.AUDD_API_TOKEN) {
-      return m.reply(
-        '✘ El reconocimiento musical no está configurado todavía. Falta el servicio de identificación (AUDD_API_TOKEN).'
-      )
-    }
-
     let workDir
     try {
       await m.reply('⏳ Escuchando el vídeo y buscando la canción...')
@@ -111,8 +99,8 @@ export default {
       }
 
       workDir = await fs.mkdtemp(path.join(os.tmpdir(), 'nino-whatmusic-'))
-      const audioBuffer = await extractAudio(videoBuffer, workDir)
-      const song = await identifySong(audioBuffer)
+      const samples = await extractAudio(videoBuffer, workDir)
+      const song = await identifySong(samples)
       const artist = song.artist || 'Artista desconocido'
       const title = song.title || 'Canción desconocida'
       const album = song.album || 'No disponible'
@@ -126,7 +114,7 @@ export default {
             `🎵 *${title}*`,
             `👤 Artista: ${artist}`,
             `💿 Álbum: ${album}`,
-            song.release_date ? `📅 Lanzamiento: ${song.release_date}` : null,
+            song.year ? `📅 Lanzamiento: ${song.year}` : null,
             '',
             '⏳ Buscando y preparando el MP3...'
           ].filter(Boolean).join('\n')
