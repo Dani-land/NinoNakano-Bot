@@ -53,11 +53,11 @@ Usa **siempre** la librería oficial de Baileys. Nada de forks, nada de mods, na
 <summary><strong>🍒 Cloud</strong> — Shell</summary>
 
 ```bash
-git clone https://github.com/Dani-land/MIKUWABOT
+git clone https://github.com/Dani-land/NinoNakano-Bot
 ```
 
 ```bash
-cd MIKUWABOT
+cd NinoNakano-Bot
 ```
 
 ```bash
@@ -85,11 +85,11 @@ apt update && apt upgrade && pkg install -y git nodejs ffmpeg imagemagick yarn
 ```
 
 ```bash
-git clone https://github.com/Dani-land/MIKUWABOT
+git clone https://github.com/Dani-land/NinoNakano-Bot
 ```
 
 ```bash
-cd MIKUWABOT
+cd NinoNakano-Bot
 ```
 
 ```bash
@@ -142,12 +142,12 @@ pm2 start index
 ### 🔄 Si el bot se detiene
 > _Se fue la luz, se cerró Termux o reiniciaste el celular. No pasa nada, solo corre esto:_
 ```bash
-cd && cd MIKUWABOT && npm start
+cd && cd NinoNakano-Bot && npm start
 ```
 ---
 
 ### 🔑 ¿Necesitas iniciar sesión de nuevo?
-> *Detén el bot (ctrl + "z" + ENTER) hasta ver algo verde parecido a `MIKUWABOT $`, luego:*
+> *Detén el bot (ctrl + "z" + ENTER) hasta ver algo verde parecido a `NinoNakano-Bot $`, luego:*
  
 ```bash 
 cd && cd NinoNakano-Bot && rm -rf Sessions/Owner && npm start
