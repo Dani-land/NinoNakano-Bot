@@ -8,6 +8,23 @@ import {
 const groupMetadataCache = new Map()
 const groupMetadataRequests = new Map()
 
+const CHANNEL_JID = '120363420575743790@newsletter'
+const CHANNEL_NAME = 'ミ★ 𝙉𝙞𝙣𝙤 𝙐𝙥𝙙𝙖𝙩𝙚𝙨 ★彡'
+
+function buildChannelForwardContext(mentionJid, authorJid) {
+    return {
+        contextInfo: {
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: CHANNEL_JID,
+                serverMessageId: '0',
+                newsletterName: CHANNEL_NAME,
+            },
+            mentionedJid: [mentionJid, authorJid].filter(Boolean),
+        },
+    }
+}
+
 async function getGroupMetadata(client, groupId) {
     const cached = groupMetadataCache.get(groupId)
     if (cached && Date.now() - cached.timestamp < 60 * 1000) {
@@ -65,6 +82,7 @@ export const participantsUpdate = async (client, anu) => {
         const entries = Array.isArray(anu.participants) ? anu.participants : []
         const metadataCount = metadata.participants.length
         const memberCount = metadataCount > 0 ? metadataCount : entries.length
+
         for (const entry of entries) {
             const participant = typeof entry === 'string' ? { id: entry } : (entry || {})
             const originalJid = participant.id || participant.lid || participant.phoneNumber
@@ -74,6 +92,7 @@ export const participantsUpdate = async (client, anu) => {
             if (jid?.endsWith('@lid') && participant.phoneNumber) {
                 jid = participant.phoneNumber
             }
+
             const mentionJid = jid || originalJid
             const phone = mentionJid.split('@')[0]
             const pp = await client.profilePictureUrl(jid, 'image').catch(_ => 'https://d0mwa043ankuvadx.public.blob.vercel-storage.com/nyx/33UYPOQ.jpg')
@@ -92,8 +111,10 @@ export const participantsUpdate = async (client, anu) => {
                     image: { url: pp },
                     caption: caption,
                     mentions: [mentionJid],
+                    ...buildChannelForwardContext(mentionJid, anu.author),
                 })
             }
+
             if ((anu.action === 'remove' || anu.action === 'leave') && chat?.welcome && isPrimary) {
                 const caption = `✦ Un miembro se ha despedido
 
@@ -107,6 +128,7 @@ export const participantsUpdate = async (client, anu) => {
                     image: { url: pp },
                     caption: caption,
                     mentions: [mentionJid],
+                    ...buildChannelForwardContext(mentionJid, anu.author),
                 })
             }
 
