@@ -61,7 +61,7 @@ async function run({ client, m, args, command, prefa }) {
     if (!respuestaUsuario) {
       return client.reply(
         chatId,
-        `✦ Escribe una respuesta válida.\n\nEjemplo:\n> *${prefa}responder 42*`,
+        `✦ Escribe una respuesta válida.\n\nEjemplo:\n> *${used.prefix}responder 42*`,
         m
       );
     }
