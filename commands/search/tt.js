@@ -27,6 +27,15 @@ function getVideoUrl(v) {
   )
 }
 
+function getCover(v) {
+  return (
+    v?.cover ||
+    v?.origin_cover ||
+    v?.video?.cover?.url_list?.[0] ||
+    null
+  )
+}
+
 function getAuthor(v) {
   return (
     v?.author?.unique_id ||
@@ -86,6 +95,7 @@ export default {
           const videoUrl = getVideoUrl(v)
           return {
             url: videoUrl,
+            cover: getCover(v),
             title: getTitle(v),
             author: getAuthor(v),
             likes: v?.digg_count || v?.like_count || 0,
@@ -98,59 +108,87 @@ export default {
         return m.reply(`✘ Encontré resultados, pero no pude obtener los enlaces de video para *${query}*`)
       }
 
-      const top = usable.slice(0, 3)
+      const top = usable.slice(0, 5)
 
-      const header = `
+      const cards = top.map((v, i) => ({
+        header: {
+          title: `${i + 1}. ${v.title}`,
+          hasMediaAttachment: true,
+          imageMessage: v.cover ? { url: v.cover } : undefined,
+          videoMessage: !v.cover ? { url: v.url } : undefined
+        },
+        body: {
+          text: `♡ @${v.author}\n♡ ${formatCount(v.likes)} Likes  •  ▶ ${formatCount(v.views)} Views`
+        },
+        nativeFlowMessage: {
+          buttons: [
+            {
+              name: 'cta_url',
+              buttonParamsJson: JSON.stringify({
+                display_text: 'Ver / Descargar',
+                url: v.url
+              })
+            }
+          ]
+        }
+      }))
+
+      try {
+        await client.sendMessage(
+          m.chat,
+          {
+            interactiveMessage: {
+              body: { text: `*✿ Resultados de TikTok*\n✧ Búsqueda › ${query}` },
+              footer: { text: 'ꕥ Toca una tarjeta para ver el video' },
+              carouselMessage: { cards }
+            }
+          },
+          { quoted: m }
+        )
+      } catch (carouselError) {
+        console.log('Carrusel falló, usando envío normal:', carouselError)
+
+        const header = `
 *✿ Resultados de TikTok*
 ✧ Búsqueda › ${query}
 ✧ Enviando ${top.length} videos...
 `.trim()
 
-      await client.sendMessage(
-        m.chat,
-        { text: header },
-        { quoted: m }
-      )
+        await client.sendMessage(m.chat, { text: header }, { quoted: m })
 
-      for (let i = 0; i < top.length; i++) {
-        const v = top[i]
+        for (let i = 0; i < top.length; i++) {
+          const v = top[i]
 
-        const caption = `
+          const caption = `
 *ꕥ TikTok Búsqueda*
 ⌗» ${i + 1}. ${v.title}
 ♡ @${v.author}
 ♡ ${formatCount(v.likes)} Likes  •  ▶ ${formatCount(v.views)} Views
 `.trim()
 
-        try {
-          await client.sendMessage(
-            m.chat,
-            {
-              video: { url: v.url },
-              caption
-            },
-            { quoted: m }
-          )
-        } catch (videoError) {
-          console.log('Error enviando video de TikTok:', videoError)
+          try {
+            await client.sendMessage(
+              m.chat,
+              { video: { url: v.url }, caption },
+              { quoted: m }
+            )
+          } catch {
+            await client.sendMessage(
+              m.chat,
+              { text: `${caption}\n\n${v.url}` },
+              { quoted: m }
+            )
+          }
 
-          await client.sendMessage(
-            m.chat,
-            {
-              text: `${caption}\n\n${v.url}`
-            },
-            { quoted: m }
-          )
+          await sleep(1200)
         }
-
-        await sleep(1200)
       }
 
-      const extra = usable.slice(3, 5)
+      const extra = usable.slice(5, 7)
       if (extra.length) {
         const listText = extra.map((v, i) => {
           return (
-            `*${i + 4}.* ${v.title}\n` +
+            `*${i + 6}.* ${v.title}\n` +
             `@${v.author}\n` +
             `♡ ${formatCount(v.likes)} Likes  •  ▶ ${formatCount(v.views)} Views\n` +
             `${v.url}`
@@ -159,9 +197,7 @@ export default {
 
         await client.sendMessage(
           m.chat,
-          {
-            text: `✦ Más resultados\n\n${listText}`
-          },
+          { text: `✦ Más resultados\n\n${listText}` },
           { quoted: m }
         )
       }
