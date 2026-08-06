@@ -133,7 +133,7 @@ export default {
           menu += `✐ ${aliases}${cmd.uso ? `  ⟡ ${cmd.uso}` : ''}\n`
 
           if (cmd.desc) {
-            menu += `   ꕥ ${cmd.desc}\n`
+            menu += ` > ꕥ ${cmd.desc}\n`
           }
 
           menu += `\n`
