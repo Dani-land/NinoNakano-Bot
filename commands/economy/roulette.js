@@ -44,8 +44,8 @@ export default {
     if (amount > 10000)
       return m.reply(`✦ No puedes apostar más de *10,000 ${currency}* por ronda.`)
 
-    if (!['red', 'black', 'green'].includes(color))
-      return m.reply(`✦ Colores disponibles:\n\n🔴 red\n⚫ black\n🟢 green`)
+    if (!['red', 'black', 'orange', 'white', 'green'].includes(color))
+      return m.reply(`✦ Colores disponibles:\n\n🔴 red\n⚫ black\n🟢 green\n🟠 orange\n⚪ white`)
 
     if (user.coins < amount)
       return m.reply(`✦ No tienes suficientes *${currency}* para apostar.`)
