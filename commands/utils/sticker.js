@@ -9,7 +9,7 @@ export default {
       const user = global.db.data.users[m.sender]
       const user2 = global.db.data.chats[m.chat].users[m.sender]
 
-      const text1 = user.metadatos || '✦ Hatsune Miku Bot'
+      const text1 = user.metadatos || '✦ Nino Nakano Bot'
       const text2 = user.metadatos2 || `Usuario: @${user.name}`
 
       const q = m.quoted || m
