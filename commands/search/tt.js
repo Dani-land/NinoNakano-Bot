@@ -96,34 +96,28 @@ export default {
 
       const top = usable.slice(0, 7)
 
-      const medias = top.map((v, i) => ({
-        type: 'video',
-        data: { url: v.url },
-        caption:
+      for (let i = 0; i < top.length; i++) {
+        const v = top[i]
+
+        const caption =
           `*ꕥ TikTok Búsqueda*\n` +
           `⌗» ${i + 1}. ${v.title}\n` +
           `♡ @${v.author}\n` +
           `♡ ${formatCount(v.likes)} Likes  •  ▶ ${formatCount(v.views)} Views`
-      }))
 
-      await client.sendAlbumMessage(m.chat, medias, { quoted: m })
-
-      const extra = usable.slice(7, 9)
-      if (extra.length) {
-        const listText = extra.map((v, i) => {
-          return (
-            `*${i + 8}.* ${v.title}\n` +
-            `@${v.author}\n` +
-            `♡ ${formatCount(v.likes)} Likes  •  ▶ ${formatCount(v.views)} Views\n` +
-            `${v.url}`
+        try {
+          await client.sendMessage(
+            m.chat,
+            { video: { url: v.url }, caption },
+            { quoted: m }
           )
-        }).join('\n\n')
-
-        await client.sendMessage(
-          m.chat,
-          { text: `✦ Más resultados\n\n${listText}` },
-          { quoted: m }
-        )
+        } catch {
+          await client.sendMessage(
+            m.chat,
+            { text: `${caption}\n\n${v.url}` },
+            { quoted: m }
+          )
+        }
       }
 
     } catch (e) {
