@@ -167,6 +167,9 @@ cd && cd NinoNakano-Bot && rm -rf Sessions/Owner && npm start
 ### ❀ Propietario
 [![Danielrxz](https://github.com/Dani-land.png?size=120)](https://github.com/Dani-land)
 
+### ꕤ Colaborador
+[![M4TEO FX](https://github.com/M4TEO-FX.png?size=100)](https://github.com/M4TEO-FX)
+
 <p align="center">
   <em>Si te gustó el proyecto, una ⭐ en el repo ayuda más de lo que crees.</em>
 </p>
