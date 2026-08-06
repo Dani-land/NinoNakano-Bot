@@ -73,20 +73,22 @@ export default {
           ? 'Creadora'
           : 'Creador(a)'
 
+      const linea = '❀┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄❀'
+
       let menu = `\n`
       menu += `✿  Nino Nakano Bot  ✿\n`
-      menu += `ꕤ────────────────────ꕤ\n`
-      menu += `꒰୨୧꒱ ${ucapan} · ${m.pushName ? m.pushName : 'Sin nombre'}\n\n`
+      menu += `${linea}\n`
+      menu += `꒰୨୧꒱ ${ucapan}, ${m.pushName ? m.pushName : 'Sin nombre'} ♡\n\n`
 
       menu += `꒰୨୧꒱ Nino Wabot\n`
-      menu += `ꕤ────────────────────ꕤ\n`
+      menu += `${linea}\n`
       menu += `꒰୨୧꒱ ${ownerLabel} › ${ownerDisplay}\n`
       menu += `꒰୨୧꒱ Plugins › ${plugins}\n`
       menu += `꒰୨୧꒱ Versión › 3.1.9\n`
       menu += `꒰୨୧꒱ Link › ${link}\n`
       menu += `꒰୨୧꒱ Fecha › ${tiempo}, ${tiempo2}\n`
       menu += `꒰୨୧꒱ Users › ${Object.keys(users).length.toLocaleString()}\n`
-      menu += `ꕤ────────────────────ꕤ\n`
+      menu += `${linea}\n`
 
       const categoryArg = args[0]?.toLowerCase()
       const categories = {}
@@ -100,8 +102,8 @@ export default {
       if (categoryArg && !categories[categoryArg]) {
         return m.reply(
           `✘ La categoría *${categoryArg}* no fue encontrada.\n\n` +
-          `ꕤ Categorías disponibles:\n` +
-          `${Object.keys(categories).map(c => `• ${c}`).join('\n')}`
+          `✿ Categorías disponibles:\n` +
+          `${Object.keys(categories).map(c => `❀ ${c}`).join('\n')}`
         )
       }
 
@@ -113,8 +115,8 @@ export default {
         const catName = titleCase(category)
 
         menu += `\n`
-        menu += `ꕤ  ${catName}  ꕤ\n`
-        menu += `ꕤ────────────────────ꕤ\n`
+        menu += `✿  ${catName}  ✿\n`
+        menu += `${linea}\n`
 
         cmds.forEach(cmd => {
           const aliases = (Array.isArray(cmd.alias) ? cmd.alias : cmd.command || [])
@@ -128,16 +130,16 @@ export default {
             })
             .join(' › ')
 
-          menu += `꒰୨୧꒱ ${aliases}${cmd.uso ? `  ⟡ ${cmd.uso}` : ''}\n`
+          menu += `✐ ${aliases}${cmd.uso ? `  ⟡ ${cmd.uso}` : ''}\n`
 
           if (cmd.desc) {
-            menu += `      ${cmd.desc}\n`
+            menu += `   ꕥ ${cmd.desc}\n`
           }
 
           menu += `\n`
         })
 
-        menu += `ꕤ────────────────────ꕤ\n`
+        menu += `${linea}\n`
       }
 
       const finalMenu = menu.trim()
