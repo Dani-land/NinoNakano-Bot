@@ -20,9 +20,13 @@ const generarProblema = (dificultad) => {
   const num2 = generateRandomNumber(maxLimit);
   const operador = getOperation();
 
-  const resultado = eval(
-    `${num1} ${operador === '×' ? '*' : operador} ${num2}`
-  );
+  let resultado;
+  switch (operador) {
+    case '+': resultado = num1 + num2; break;
+    case '-': resultado = num1 - num2; break;
+    case '×': resultado = num1 * num2; break;
+    case '÷': resultado = num1 / num2; break;
+  }
 
   return {
     problema: `${num1} ${operador} ${num2}`,
@@ -32,11 +36,13 @@ const generarProblema = (dificultad) => {
   };
 };
 
-async function run({ client, m, args, command, prefa }) {
+async function run({ client, m, args, command, usedPrefix }) {
+
+  const prefa = usedPrefix || global.prefix || '.'
 
   const chatId = m.chat;
-  const db = global.db.data.chats[chatId];
-  const user = global.db.data.users[m.sender];
+  const db = global.db.data.chats[chatId] ||= {};
+  const user = global.db.data.users[m.sender] ||= {};
   const juego = global.math[chatId];
 
   if (db.adminonly || !db.rpg) {
@@ -49,19 +55,12 @@ async function run({ client, m, args, command, prefa }) {
 
     if (!juego?.juegoActivo) return;
 
-    const quotedId =
-      m.quoted?.key?.id ||
-      m.quoted?.id ||
-      m.quoted?.stanzaId;
-
-    if (quotedId !== juego.problemMessageId) return;
-
     const respuestaUsuario = args[0]?.toLowerCase();
 
     if (!respuestaUsuario) {
       return client.reply(
         chatId,
-        `✦ Escribe una respuesta válida.\n\nEjemplo:\n> *${used.prefix}responder 42*`,
+        `✦ Escribe una respuesta válida.\n\nEjemplo:\n> *${prefa}responder 42*`,
         m
       );
     }
@@ -79,7 +78,7 @@ async function run({ client, m, args, command, prefa }) {
         const expaleatorio =
           Math.floor(Math.random() * 50) + 10;
 
-        user.exp += expaleatorio;
+        user.exp = (user.exp || 0) + expaleatorio;
 
         clearTimeout(juego.tiempoLimite);
         delete global.math[chatId];
