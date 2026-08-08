@@ -5,7 +5,6 @@ import fetch from 'node-fetch'
 const NYX_BASE = 'https://nyxdlapi.vercel.app'
 const NYX_IG_URL = `${NYX_BASE}/api/downloads/instagram`
 
-// Canal que se muestra como "reenviado desde" en cada envío de Instagram
 const CHANNEL_JID = '120363420575743790@newsletter'
 const CHANNEL_NAME = '꒰୨୧꒱ 𝙉𝙞𝙣𝙤 𝙉𝙖𝙠𝙖𝙣𝙤 𝘽𝙤𝙩'
 
