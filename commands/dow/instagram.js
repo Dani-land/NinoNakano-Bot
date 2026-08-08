@@ -5,6 +5,25 @@ import fetch from 'node-fetch'
 const NYX_BASE = 'https://nyxdlapi.vercel.app'
 const NYX_IG_URL = `${NYX_BASE}/api/downloads/instagram`
 
+// Canal que se muestra como "reenviado desde" en cada envío de Instagram
+const CHANNEL_JID = '120363420575743790@newsletter'
+const CHANNEL_NAME = '꒰୨୧꒱ 𝙉𝙞𝙣𝙤 𝙉𝙖𝙠𝙖𝙣𝙤 𝘽𝙤𝙩'
+
+function channelContext(extra = {}) {
+  return {
+    contextInfo: {
+      forwardingScore: 999,
+      isForwarded: true,
+      forwardedNewsletterMessageInfo: {
+        newsletterJid: CHANNEL_JID,
+        newsletterName: CHANNEL_NAME,
+        serverMessageId: 1,
+      },
+      ...extra,
+    },
+  }
+}
+
 function resolveMediaUrl(u) {
   if (!u) return null
   return u.startsWith('http') ? u : `${NYX_BASE}${u}`
@@ -41,7 +60,7 @@ async function resolveInstagram(url) {
 
   return {
     mediaList,
-    username: result?.autor?.username || result?.author?.username || 'Instagram',
+    username: result?.autor?.username || result?.author?.username || result?.author || 'Instagram',
     caption: result?.caption || '',
     likes: result?.estadisticas?.likes ?? result?.stats?.likes ?? null,
     comments: result?.estadisticas?.comentarios ?? result?.stats?.comments ?? null,
@@ -94,6 +113,7 @@ export default {
             {
               [type]: { url: mediaUrl },
               caption: i === 0 ? info : undefined,
+              ...channelContext(),
             },
             { quoted: m }
           )
