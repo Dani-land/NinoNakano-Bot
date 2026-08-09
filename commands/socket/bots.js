@@ -14,9 +14,7 @@ export default {
     const botId = client.user.id.split(':')[0] + '@s.whatsapp.net'
     const bot = global.db.data.settings[botId]
 
-    const botname = bot.namebot
     const botname2 = bot.namebot2
-    const banner = bot.icon
 
     const from = m.key.remoteJid
 
@@ -64,7 +62,7 @@ export default {
 
     const mentionedJid = []
 
-    const formatBot = (number, label) => {
+    const formatBot = (number) => {
       const jid = number + '@s.whatsapp.net'
 
       if (!groupParticipants.includes(jid)) return null
@@ -75,27 +73,21 @@ export default {
       const name = data?.namebot2 || 'Bot'
       const handle = `@${number}`
 
-      return `✦ *${name}* › ${handle}`
+      return `✧ *${name}* — ${handle}`
     }
 
     if (global.db.data.settings[mainBotJid]) {
-      const name =
-        global.db.data.settings[mainBotJid].namebot2
-
+      const name = global.db.data.settings[mainBotJid].namebot2
       const handle = `@${mainBotJid.split('@')[0]}`
 
       if (isMainBotInGroup) {
         mentionedJid.push(mainBotJid)
-
-        categorizedBots.Owner.push(
-          `✦ *${name}* › ${handle}`
-        )
+        categorizedBots.Owner.push(`✧ *${name}* — ${handle}`)
       }
     }
 
     subs.forEach((num) => {
-      const line = formatBot(num, 'Sub')
-
+      const line = formatBot(num)
       if (line) categorizedBots.Sub.push(line)
     })
 
@@ -104,50 +96,28 @@ export default {
       Sub: subs.length,
     }
 
-    const totalBots =
-      totalCounts.Owner + totalCounts.Sub
+    const totalBots = totalCounts.Owner + totalCounts.Sub
+    const totalInGroup = categorizedBots.Owner.length + categorizedBots.Sub.length
 
-    const totalInGroup =
-      categorizedBots.Owner.length +
-      categorizedBots.Sub.length
+    let message = `❀ · · ─── · · ❀\n`
+    message += `   *${botname2}*\n`
+    message += `   𝗦𝗼𝗰𝗸𝗲𝘁𝘀 𝗔𝗰𝘁𝗶𝘃𝗼𝘀\n`
+    message += `❀ · · ─── · · ❀\n\n`
 
-    let message = `︵‿︵‿୨♡୧‿︵‿︵
-꒰ 🌸 ꒱ *${botname2}*
-꒰ 💠 ꒱ 𝖲𝗈𝖼𝗄𝖾𝗍𝗌 𝖠𝖼𝗍𝗂𝗏𝗈𝗌
-︶︶︶︶︶︶︶︶︶
-
-✦ 𝖳𝗈𝗍𝖺𝗅 𝖽𝖾 𝖡𝗈𝗍𝗌 › *${totalBots}*
-✦ 𝖤𝗇 𝖤𝗅 𝖦𝗋𝗎𝗉𝗈 › *${totalInGroup}*
-
-❀ 𝖯𝗋𝗂𝗇𝖼𝗂𝗉𝖺𝗅𝖾𝗌 › *${totalCounts.Owner}*
-❀ 𝖲𝗎𝖻 𝖡𝗈𝗍𝗌 › *${totalCounts.Sub}*
-
-`
+    message += `Total de bots ﹕*${totalBots}*\n`
+    message += `En este grupo ﹕*${totalInGroup}*\n`
+    message += `Principales ﹕*${totalCounts.Owner}*\n`
+    message += `Sub bots ﹕*${totalCounts.Sub}*\n\n`
 
     if (categorizedBots.Owner.length) {
-      message += `╭─❀「 OWNER BOTS 」❀
-`
-
-      message += categorizedBots.Owner
-        .map((v) => `│ ⭓ ${v}`)
-        .join('\n')
-
-      message += `
-╰─────────────⬣
-
-`
+      message += `*── 𝐎𝐖𝐍𝐄𝐑 𝐁𝐎𝐓𝐒 ──*\n`
+      message += categorizedBots.Owner.join('\n')
+      message += `\n\n`
     }
 
     if (categorizedBots.Sub.length) {
-      message += `╭─❀「 SUB BOTS 」❀
-`
-
-      message += categorizedBots.Sub
-        .map((v) => `│ ⭓ ${v}`)
-        .join('\n')
-
-      message += `
-╰─────────────⬣`
+      message += `*── 𝐒𝐔𝐁 𝐁𝐎𝐓𝐒 ──*\n`
+      message += categorizedBots.Sub.join('\n')
     }
 
     await client.sendContextInfoIndex(
