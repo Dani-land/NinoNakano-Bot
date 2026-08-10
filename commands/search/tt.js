@@ -66,8 +66,10 @@ export default {
       const { data } = await axios.get(url, {
         timeout: 25000,
         headers: {
-          'User-Agent': 'Mozilla/5.0',
-          'Accept': 'application/json'
+          'User-Agent': 'Mozilla/5.0 (Linux; Android 10; SM-G975F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36',
+          'Referer': 'https://www.tikwm.com/',
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'en-US,en;q=0.9'
         }
       })
 
