@@ -63,7 +63,7 @@ export default {
     try {
       const url = `https://www.tikwm.com/api/feed/search?keywords=${encodeURIComponent(query)}&count=10&cursor=0`
 
-      const { data } = await axios.get(url, {
+      const { data, status } = await axios.get(url, {
         timeout: 25000,
         headers: {
           'User-Agent': 'Mozilla/5.0 (Linux; Android 10; SM-G975F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36',
@@ -73,10 +73,16 @@ export default {
         }
       })
 
+      // DEBUG: mira en tu consola exactamente qué está devolviendo tikwm ahora
+      console.log('[tiktoksearch] HTTP status:', status)
+      console.log('[tiktoksearch] respuesta cruda:', JSON.stringify(data).slice(0, 1500))
+
       const results = pickResults(data)
 
       if (!Array.isArray(results) || !results.length) {
-        return m.reply(`✘ No encontré resultados para *${query}*`)
+        return m.reply(
+          `✘ No encontré resultados para *${query}*\n\n(revisa la consola de tu bot: busca "[tiktoksearch] respuesta cruda" para ver qué devolvió la API)`
+        )
       }
 
       const usable = results
@@ -123,7 +129,7 @@ export default {
       }
 
     } catch (e) {
-      console.log(e)
+      console.log('[tiktoksearch] ERROR:', e?.response?.status, e?.response?.data || e.message)
       m.reply(
         `❌ Error al buscar videos.\n\n${e.message || e}`
       )
