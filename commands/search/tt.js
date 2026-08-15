@@ -1,45 +1,19 @@
 import axios from 'axios'
 
 function pickResults(data) {
-  return (
-    data?.data?.videos ||
-    data?.data?.aweme_list ||
-    data?.data?.items ||
-    data?.videos ||
-    []
-  )
+  return data?.data?.videos || []
 }
 
 function getVideoUrl(v) {
-  return (
-    v?.play ||
-    v?.play_url ||
-    v?.video?.play_addr?.url_list?.[0] ||
-    v?.video?.download_addr?.url_list?.[0] ||
-    v?.play_addr?.url_list?.[0] ||
-    v?.download_addr?.url_list?.[0] ||
-    v?.video?.play ||
-    null
-  )
+  return v?.play || v?.wmplay || v?.hdplay || null
 }
 
 function getAuthor(v) {
-  return (
-    v?.author?.unique_id ||
-    v?.author?.nickname ||
-    v?.author?.name ||
-    v?.author?.uid ||
-    'desconocido'
-  )
+  return v?.author?.unique_id || v?.author?.nickname || 'desconocido'
 }
 
 function getTitle(v) {
-  const t =
-    v?.title ||
-    v?.desc ||
-    v?.description ||
-    'Sin descripción'
-
+  const t = v?.title || 'Sin descripción'
   return t.length > 80 ? t.slice(0, 80) + '...' : t
 }
 
@@ -61,20 +35,25 @@ export default {
     const query = args.join(' ').trim()
 
     try {
-      const url = `https://www.tikwm.com/api/feed/search?keywords=${encodeURIComponent(query)}&count=10&cursor=0`
+      const url = `https://www.tikwm.com/api/feed/search`
 
       const { data, status } = await axios.get(url, {
+        params: {
+          keywords: query,
+          count: 10,
+          cursor: 0,
+          hd: 1
+        },
         timeout: 25000,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Linux; Android 10; SM-G975F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
           'Referer': 'https://www.tikwm.com/',
           'Accept': 'application/json, text/plain, */*',
           'Accept-Language': 'en-US,en;q=0.9'
         }
       })
 
-      // DEBUG: mira en tu consola exactamente qué está devolviendo tikwm ahora
-      console.log('[tiktoksearch] HTTP status:', status)
+      console.log('[tiktoksearch] HTTP status:', status, '| code:', data?.code)
       console.log('[tiktoksearch] respuesta cruda:', JSON.stringify(data).slice(0, 1500))
 
       const results = pickResults(data)
@@ -86,16 +65,13 @@ export default {
       }
 
       const usable = results
-        .map((v) => {
-          const videoUrl = getVideoUrl(v)
-          return {
-            url: videoUrl,
-            title: getTitle(v),
-            author: getAuthor(v),
-            likes: v?.digg_count || v?.like_count || 0,
-            views: v?.play_count || v?.view_count || 0
-          }
-        })
+        .map((v) => ({
+          url: getVideoUrl(v),
+          title: getTitle(v),
+          author: getAuthor(v),
+          likes: v?.digg_count || 0,
+          views: v?.play_count || 0
+        }))
         .filter(v => v.url)
 
       if (!usable.length) {
@@ -130,9 +106,7 @@ export default {
 
     } catch (e) {
       console.log('[tiktoksearch] ERROR:', e?.response?.status, e?.response?.data || e.message)
-      m.reply(
-        `❌ Error al buscar videos.\n\n${e.message || e}`
-      )
+      m.reply(`❌ Error al buscar videos.\n\n${e.message || e}`)
     }
   }
 }
