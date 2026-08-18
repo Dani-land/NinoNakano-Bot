@@ -2,7 +2,7 @@ import sharp from 'sharp';
 
 export default {
   command: ['toimg', 'toimage', 'toimg2'],
-  category: 'sticker',
+  category: 'utils',
   run: async ({ client, m }) => {
     const quoted = m.quoted ? m.quoted : m;
     const mimetype = quoted.mimetype || quoted.mediaType || '';
