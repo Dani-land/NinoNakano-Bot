@@ -5,7 +5,7 @@ import fetch from 'node-fetch';
 const obtenerImagen = async (keyword) => {
   const urls = [
     `https://api.stellarwa.xyz/home#nsfw/nsfw-danbooru?keyword=${encodeURIComponent(keyword)}`,
-    `https://api.stellarwa.xyz/nsfw/gelbooru?keyword=${encodeURIComponent(keyword)}`
+    `https://api.stellarwa.xyz/home#nsfw/nsfw-gelbooru?keyword=${encodeURIComponent(keyword)}`
   ];
 
   for (const url of urls) {
