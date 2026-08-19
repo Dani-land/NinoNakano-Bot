@@ -3,30 +3,29 @@ import fetch from 'node-fetch'
 import sharp from 'sharp'
 
 const limit = 300
-
-const BROWSER_HEADERS = {
-  'user-agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
-}
-
 const NYXDL_API_KEY = 'nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
 const NYXDL_BASE = 'https://nyxdlapi.vercel.app'
-const NYXDL_AUDIO_URL = `${NYXDL_BASE}/api/downloads/youtube`
-const NYXDL_VIDEO_URL = `${NYXDL_BASE}/api/downloads/youtube/mp4`
+const NYXDL_AUDIO = `${NYXDL_BASE}/api/downloads/youtube`
+const NYXDL_VIDEO = `${NYXDL_BASE}/api/downloads/youtube/mp4`
 
 const NEWSLETTER_JID = '120363420575743790@newsletter'
 const NEWSLETTER_NAME = 'ミ★ 𝙉𝙞𝙣𝙤 𝙐𝙥𝙙𝙖𝙩𝙚𝙨 ★彡'
 
-const isYTUrl = (url) =>
-  /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|shorts\/|live\/)|youtu\.be\/).+$/i.test(url)
+const HEADERS = {
+  'user-agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+}
 
-function toAbsoluteUrl(maybeUrl) {
-  if (!maybeUrl || typeof maybeUrl !== 'string') return null
-  const u = maybeUrl.trim()
-  if (!u) return null
-  if (/^https?:\/\//i.test(u)) return u
-  if (u.startsWith('//')) return `https:${u}`
-  if (u.startsWith('/')) return `\( {NYXDL_BASE} \){u}`
+const isYTUrl = (u) =>
+  /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|shorts\/|live\/)|youtu\.be\/)/i.test(u || '')
+
+function abs(u) {
+  if (!u || typeof u !== 'string') return null
+  const s = u.trim()
+  if (!s) return null
+  if (/^https?:\/\//i.test(s)) return s
+  if (s.startsWith('//')) return 'https:' + s
+  if (s.startsWith('/')) return NYXDL_BASE + s
   return null
 }
 
@@ -42,252 +41,182 @@ function newsletterContext() {
   }
 }
 
-async function getBufferFromUrl(url, extraHeaders = {}) {
-  const absolute = toAbsoluteUrl(url)
-  if (!absolute) throw new Error(`URL de descarga inválida: ${url}`)
-
-  const res = await fetch(absolute, {
-    redirect: 'follow',
-    headers: { ...BROWSER_HEADERS, ...extraHeaders },
-  })
-
-  if (!res.ok) {
-    throw new Error(`No se pudo descargar el archivo (${res.status})`)
-  }
-
-  const contentType = res.headers.get('content-type') || ''
-  if (contentType.includes('text/html') || contentType.includes('application/json')) {
-    throw new Error(`El servidor devolvió contenido inválido (${contentType})`)
-  }
-
-  const arrayBuffer = await res.arrayBuffer()
-  const buffer = Buffer.from(arrayBuffer)
-
-  if (buffer.length < 10000) {
-    throw new Error('Archivo descargado demasiado pequeño, probablemente inválido')
-  }
-
-  return buffer
-}
-
-async function sendPlayableVideo(client, m, dl, title, thumbBuffer, extraHeaders) {
-  const fileName = `${title}.mp4`
-  const absolute = toAbsoluteUrl(dl)
-  if (!absolute) throw new Error(`URL de video inválida: ${dl}`)
-
+function extractVideoId(url) {
   try {
-    const buffer = await getBufferFromUrl(absolute, extraHeaders)
-
-    await client.sendMessage(
-      m.chat,
-      {
-        video: buffer,
-        mimetype: 'video/mp4',
-        fileName,
-        ptv: false,
-        jpegThumbnail: thumbBuffer || undefined,
-        contextInfo: newsletterContext(),
-      },
-      { quoted: m }
-    )
-    return
-  } catch (e) {
-    console.log('Video buffer falló, usando URL directa:', e.message)
+    const u = new URL(url.startsWith('http') ? url : 'https://' + url)
+    if (u.hostname.includes('youtu.be')) return u.pathname.replace('/', '').split('/')[0]
+    return u.searchParams.get('v') || null
+  } catch {
+    return null
   }
-
-  await client.sendMessage(
-    m.chat,
-    {
-      video: { url: absolute },
-      mimetype: 'video/mp4',
-      fileName,
-      ptv: false,
-      jpegThumbnail: thumbBuffer || undefined,
-      contextInfo: newsletterContext(),
-    },
-    { quoted: m }
-  )
 }
 
-async function requestNyxDL(baseUrl, ytUrl) {
-  const absoluteYt = toAbsoluteUrl(ytUrl) || ytUrl
-  if (!absoluteYt || !/^https?:\/\//i.test(absoluteYt)) {
+async function callNyxDL(endpoint, ytUrl) {
+  const clean = abs(ytUrl) || (ytUrl?.startsWith('http') ? ytUrl : `https://${ytUrl}`)
+  if (!clean || !/^https?:\/\//i.test(clean)) {
     throw new Error(`URL de YouTube inválida: ${ytUrl}`)
   }
 
-  const apiUrl = `\( {baseUrl}?url= \){encodeURIComponent(absoluteYt)}&apikey=${encodeURIComponent(NYXDL_API_KEY)}`
+  const apiUrl = `\( {endpoint}?url= \){encodeURIComponent(clean)}&apikey=${encodeURIComponent(NYXDL_API_KEY)}`
+  console.log('[NyxDL] GET', apiUrl)
 
   const res = await fetch(apiUrl, {
-    headers: { accept: 'application/json', 'user-agent': BROWSER_HEADERS['user-agent'] },
+    headers: { accept: 'application/json', ...HEADERS },
   })
-
   const text = await res.text()
 
-  if (!res.ok) {
-    throw new Error(`NyxDL HTTP ${res.status}: ${text.slice(0, 200)}`)
-  }
+  if (!res.ok) throw new Error(`NyxDL HTTP ${res.status}: ${text.slice(0, 180)}`)
 
   let data
   try {
     data = JSON.parse(text)
   } catch {
-    throw new Error(`Respuesta inválida de NyxDL: ${text.slice(0, 200)}`)
+    throw new Error(`NyxDL no devolvió JSON: ${text.slice(0, 180)}`)
   }
 
-  const r = data?.result
-  const download = toAbsoluteUrl(r?.download || r?.url || r?.datos?.url)
+  const r = data?.result || {}
+  const dl =
+    abs(r.download_url) ||
+    abs(r.download) ||
+    abs(r.url) ||
+    abs(r.datos?.url) ||
+    abs(r.datos?.download)
 
-  if (!data?.status || !download) {
-    throw new Error(data?.message || r?.message || 'La API no devolvió un link de descarga válido.')
+  if (!data?.status || !dl) {
+    throw new Error(data?.message || 'NyxDL no devolvió link de descarga.')
   }
 
   return {
-    download,
-    title: r.titulo || r.title || 'Sin título',
-    duration: r.duracion || r.duration || null,
-    channel: r.canal || r.channel || null,
-    quality: r.datos?.calidad || r.quality || null,
-    size: r.datos?.tamaño || r.datos?.size || r.size || null,
-    extension: r.datos?.extension || (r.container === 'mp3' ? '.mp3' : '.mp4'),
-    container: r.container || null,
-  }
-}
-
-export async function resolveAudioDownload(url, title) {
-  const result = await requestNyxDL(NYXDL_AUDIO_URL, url)
-
-  return {
-    dl: result.download,
-    title: result.title || title,
-    quality: result.quality,
-    sizeText: result.size,
-    duration: result.duration,
-    channel: result.channel,
-    headers: BROWSER_HEADERS,
-  }
-}
-
-async function resolveVideoDownload(url, title) {
-  const result = await requestNyxDL(NYXDL_VIDEO_URL, url)
-
-  return {
-    dl: result.download,
-    title: result.title || title,
-    quality: result.quality,
-    sizeText: result.size,
-    duration: result.duration,
-    channel: result.channel,
-    headers: BROWSER_HEADERS,
+    dl,
+    title: r.title || r.titulo || 'Sin título',
+    duration: r.duration || r.duracion || null,
+    channel: r.channel || r.canal || null,
+    quality: r.quality || r.datos?.calidad || null,
+    size: r.size || r.datos?.tamaño || null,
+    thumbnail: abs(r.thumbnail) || null,
   }
 }
 
 async function sendResult({ client, m, url, title, videoInfo, isAudio, asDocument }) {
   const result = isAudio
-    ? await resolveAudioDownload(url, title)
-    : await resolveVideoDownload(url, title)
+    ? await callNyxDL(NYXDL_AUDIO, url)
+    : await callNyxDL(NYXDL_VIDEO, url)
 
-  const { dl, title: apiTitle, headers: dlHeaders } = result
-  const finalTitle = apiTitle || title
-  const absoluteDl = toAbsoluteUrl(dl)
+  const finalTitle = result.title || title || 'archivo'
+  const dl = abs(result.dl)
+  if (!dl) throw new Error('Link de descarga vacío o inválido')
 
-  if (!absoluteDl) {
-    throw new Error(`No se obtuvo una URL de descarga válida de la API.`)
-  }
+  console.log('[NyxDL] download =', dl)
 
   let thumbBuffer = null
-  if (videoInfo?.thumbnail) {
+  const thumbSrc = result.thumbnail || abs(videoInfo?.thumbnail)
+  if (thumbSrc) {
     try {
-      const thumbUrl = toAbsoluteUrl(videoInfo.thumbnail)
-      if (thumbUrl) {
-        const response = await fetch(thumbUrl)
-        const arrayBuffer = await response.arrayBuffer()
-        thumbBuffer = await sharp(Buffer.from(arrayBuffer)).resize(500, 281).jpeg({ quality: 85 }).toBuffer()
+      const tr = await fetch(thumbSrc, { headers: HEADERS })
+      if (tr.ok) {
+        const buf = Buffer.from(await tr.arrayBuffer())
+        thumbBuffer = await sharp(buf).resize(500, 281).jpeg({ quality: 85 }).toBuffer()
       }
-    } catch {}
+    } catch (e) {
+      console.log('thumb fail:', e.message)
+    }
   }
 
-  const infoLines = [`✿ *${finalTitle}*`, '']
-  if (result.duration || videoInfo?.duration) {
-    infoLines.push(`⌗» Duración › ${result.duration || videoInfo.duration}`)
+  const lines = [`✿ *${finalTitle}*`, '']
+  if (result.duration || videoInfo?.timestamp || videoInfo?.duration) {
+    lines.push(`⌗» Duración › ${result.duration || videoInfo.timestamp || videoInfo.duration}`)
   }
-  if (videoInfo?.views !== undefined) {
-    infoLines.push(`⌗» Vistas › ${videoInfo.views?.toLocaleString() || 0}`)
-  }
+  if (videoInfo?.views != null) lines.push(`⌗» Vistas › ${Number(videoInfo.views).toLocaleString()}`)
   if (result.channel || videoInfo?.author?.name) {
-    infoLines.push(`⌗» Canal › ${result.channel || videoInfo.author.name}`)
+    lines.push(`⌗» Canal › ${result.channel || videoInfo.author.name}`)
   }
-  if (videoInfo?.ago) infoLines.push(`⌗» Publicado › ${videoInfo.ago}`)
-  if (result.quality) infoLines.push(`⌗» Calidad › ${result.quality}`)
-  if (result.sizeText) infoLines.push(`⌗» Tamaño › ${result.sizeText}`)
-  infoLines.push('', isAudio ? '✐ Enviando audio...' : '✐ Enviando video...')
+  if (videoInfo?.ago) lines.push(`⌗» Publicado › ${videoInfo.ago}`)
+  if (result.quality) lines.push(`⌗» Calidad › ${result.quality}`)
+  if (result.size) lines.push(`⌗» Tamaño › ${result.size}`)
+  lines.push('', isAudio ? '✐ Enviando audio...' : '✐ Enviando video...')
 
-  const infoText = infoLines.join('\n')
+  const infoText = lines.join('\n')
+  const ctx = newsletterContext()
 
   if (thumbBuffer) {
-    await client.sendMessage(
-      m.chat,
-      { image: thumbBuffer, caption: infoText, contextInfo: newsletterContext() },
-      { quoted: m }
-    )
+    await client.sendMessage(m.chat, { image: thumbBuffer, caption: infoText, contextInfo: ctx }, { quoted: m })
   } else {
-    await client.sendMessage(
-      m.chat,
-      { text: infoText, contextInfo: newsletterContext() },
-      { quoted: m }
-    )
+    await client.sendMessage(m.chat, { text: infoText, contextInfo: ctx }, { quoted: m })
   }
 
   if (isAudio) {
     await client.sendMessage(
       m.chat,
       {
-        [asDocument ? 'document' : 'audio']: { url: absoluteDl },
+        [asDocument ? 'document' : 'audio']: { url: dl },
         mimetype: 'audio/mpeg',
         fileName: `${finalTitle}.mp3`,
-        contextInfo: newsletterContext(),
+        contextInfo: ctx,
       },
       { quoted: m }
     )
     return
   }
 
-  if (asDocument) {
+  // video
+  let asDoc = asDocument
+  if (!asDoc) {
+    try {
+      const head = await fetch(dl, { method: 'HEAD', headers: HEADERS })
+      const len = head.headers.get('content-length')
+      const mb = len ? parseInt(len, 10) / (1024 * 1024) : 0
+      if (mb >= limit) asDoc = true
+    } catch {
+      asDoc = true
+    }
+  }
+
+  if (asDoc) {
     await client.sendMessage(
       m.chat,
       {
-        document: { url: absoluteDl },
+        document: { url: dl },
         fileName: `${finalTitle}.mp4`,
         mimetype: 'video/mp4',
-        contextInfo: newsletterContext(),
+        contextInfo: ctx,
       },
       { quoted: m }
     )
     return
   }
 
-  let exceedsLimit = false
   try {
-    const head = await fetch(absoluteDl, { method: 'HEAD', headers: BROWSER_HEADERS })
-    const contentLength = head.headers.get('content-length')
-    const fileSize = contentLength ? parseInt(contentLength) / (1024 * 1024) : 0
-    exceedsLimit = fileSize >= limit
-  } catch {
-    exceedsLimit = true
-  }
+    const res = await fetch(dl, { headers: HEADERS, redirect: 'follow' })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const buffer = Buffer.from(await res.arrayBuffer())
+    if (buffer.length < 10000) throw new Error('archivo muy pequeño')
 
-  if (exceedsLimit) {
     await client.sendMessage(
       m.chat,
       {
-        document: { url: absoluteDl },
-        fileName: `${finalTitle}.mp4`,
+        video: buffer,
         mimetype: 'video/mp4',
-        contextInfo: newsletterContext(),
+        fileName: `${finalTitle}.mp4`,
+        ptv: false,
+        jpegThumbnail: thumbBuffer || undefined,
+        contextInfo: ctx,
       },
       { quoted: m }
     )
-  } else {
-    await sendPlayableVideo(client, m, absoluteDl, finalTitle, thumbBuffer, dlHeaders)
+  } catch (e) {
+    console.log('video buffer fail, URL directa:', e.message)
+    await client.sendMessage(
+      m.chat,
+      {
+        video: { url: dl },
+        mimetype: 'video/mp4',
+        fileName: `${finalTitle}.mp4`,
+        ptv: false,
+        jpegThumbnail: thumbBuffer || undefined,
+        contextInfo: ctx,
+      },
+      { quoted: m }
+    )
   }
 }
 
@@ -296,48 +225,44 @@ export default {
     'play', 'mp3', 'playaudio', 'playdoc', 'ytmp3', 'play2',
     'mp4', 'mp4doc', 'playvideo', 'ytmp4',
   ],
-
   category: 'downloader',
 
-  run: async ({ client, m, args, command, text }) => {
+  run: async ({ client, m, command, text }) => {
     try {
-      if (!text.trim()) {
+      if (!text?.trim()) {
         return client.reply(m.chat, '✐ Ingresa un nombre o URL de YouTube.', m)
       }
 
-      const isAudio = ['play', 'mp3', 'playaudio', 'ytmp3', 'playdoc'].includes(command)
+      const isAudio = ['play', 'mp3', 'playaudio', 'ytmp3', 'playdoc', 'play2'].includes(command)
       const asDocument = ['playdoc', 'mp4doc'].includes(command)
 
       let url, title, videoInfo
 
       if (isYTUrl(text)) {
-        url = text.startsWith('http') ? text : `https://${text}`
+        url = text.startsWith('http') ? text.trim() : `https://${text.trim()}`
+        const id = extractVideoId(url)
         try {
-          const id =
-            new URL(url).searchParams.get('v') ||
-            url.split('/').pop()?.split('?')[0]
-          videoInfo = await yts({ videoId: id })
+          videoInfo = id ? await yts({ videoId: id }) : null
           title = videoInfo?.title || 'Video'
         } catch {
           title = 'Video'
         }
       } else {
-        const search = await yts(text)
-        if (!search.all.length) {
-          return m.reply('ꕥ No encontré resultados.')
-        }
+        const search = await yts(text.trim())
+        if (!search?.all?.length) return m.reply('ꕥ No encontré resultados.')
         videoInfo = search.all[0]
         title = videoInfo.title
         url = videoInfo.url
       }
 
+      url = abs(url) || url
       if (!url || !/^https?:\/\//i.test(url)) {
         return m.reply('✘ No pude obtener una URL válida de YouTube.')
       }
 
       await sendResult({ client, m, url, title, videoInfo, isAudio, asDocument })
     } catch (e) {
-      console.log(e)
+      console.error('[play]', e)
       m.reply(`✘ Error detectado.\n\n⌗» ${e.message}`)
     }
   },
