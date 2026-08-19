@@ -9,10 +9,27 @@ const BROWSER_HEADERS = {
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
 }
 
-const GOHAN_API_BASE = 'https://api-gohan-v1.onrender.com'
+const NYXDL_API_KEY = 'nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
+const NYXDL_AUDIO_URL = 'https://nyxdlapi.vercel.app/api/downloads/youtube'
+const NYXDL_VIDEO_URL = 'https://nyxdlapi.vercel.app/api/downloads/youtube/mp4'
+
+const NEWSLETTER_JID = '120363420575743790@newsletter'
+const NEWSLETTER_NAME = 'ミ★ 𝙉𝙞𝙣𝙤 𝙐𝙥𝙙𝙖𝙩𝙚𝙨 ★彡'
 
 const isYTUrl = (url) =>
   /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|shorts\/|live\/)|youtu\.be\/).+$/i.test(url)
+
+function newsletterContext() {
+  return {
+    forwardingScore: 999,
+    isForwarded: true,
+    forwardedNewsletterMessageInfo: {
+      newsletterJid: NEWSLETTER_JID,
+      newsletterName: NEWSLETTER_NAME,
+      serverMessageId: -1,
+    },
+  }
+}
 
 async function getBufferFromUrl(url, extraHeaders = {}) {
   const res = await fetch(url, {
@@ -53,6 +70,7 @@ async function sendPlayableVideo(client, m, dl, title, thumbBuffer, extraHeaders
         fileName,
         ptv: false,
         jpegThumbnail: thumbBuffer || undefined,
+        contextInfo: newsletterContext(),
       },
       { quoted: m }
     )
@@ -69,13 +87,14 @@ async function sendPlayableVideo(client, m, dl, title, thumbBuffer, extraHeaders
       fileName,
       ptv: false,
       jpegThumbnail: thumbBuffer || undefined,
+      contextInfo: newsletterContext(),
     },
     { quoted: m }
   )
 }
 
-async function requestGohan(endpoint, url) {
-  const apiUrl = `${GOHAN_API_BASE}${endpoint}?url=${encodeURIComponent(url)}`
+async function requestNyxDL(baseUrl, url) {
+  const apiUrl = `\( {baseUrl}?url= \){encodeURIComponent(url)}&apikey=${NYXDL_API_KEY}`
 
   const res = await fetch(apiUrl, {
     headers: { accept: 'application/json', 'user-agent': BROWSER_HEADERS['user-agent'] },
@@ -84,43 +103,57 @@ async function requestGohan(endpoint, url) {
   const text = await res.text()
 
   if (!res.ok) {
-    throw new Error(`API Gohan HTTP ${res.status}: ${text.slice(0, 200)}`)
+    throw new Error(`NyxDL HTTP ${res.status}: ${text.slice(0, 200)}`)
   }
 
   let data
   try {
     data = JSON.parse(text)
   } catch {
-    throw new Error(`Respuesta inválida de Gohan: ${text.slice(0, 200)}`)
+    throw new Error(`Respuesta inválida de NyxDL: ${text.slice(0, 200)}`)
   }
 
-  if (!data?.status || !data?.result?.download_url) {
-    throw new Error(data?.message || 'La API no devolvió un resultado válido.')
+  if (!data?.status || !data?.result?.download) {
+    throw new Error(data?.message || data?.result?.message || 'La API no devolvió un resultado válido.')
   }
 
-  return data.result
+  const r = data.result
+  return {
+    download: r.download || r.url,
+    title: r.titulo || r.title || 'Sin título',
+    duration: r.duracion || r.duration || null,
+    channel: r.canal || r.channel || null,
+    quality: r.datos?.calidad || r.quality || null,
+    size: r.datos?.tamaño || r.datos?.size || r.size || null,
+    extension: r.datos?.extension || (r.container === 'mp3' ? '.mp3' : '.mp4'),
+    container: r.container || null,
+  }
 }
 
 export async function resolveAudioDownload(url, title) {
-  const result = await requestGohan('/download/ytaudio', url)
+  const result = await requestNyxDL(NYXDL_AUDIO_URL, url)
 
   return {
-    dl: result.download_url,
+    dl: result.download,
     title: result.title || title,
-    quality: null,
-    sizeText: null,
+    quality: result.quality,
+    sizeText: result.size,
+    duration: result.duration,
+    channel: result.channel,
     headers: BROWSER_HEADERS,
   }
 }
 
 async function resolveVideoDownload(url, title) {
-  const result = await requestGohan('/download/ytvideo', url)
+  const result = await requestNyxDL(NYXDL_VIDEO_URL, url)
 
   return {
-    dl: result.download_url,
+    dl: result.download,
     title: result.title || title,
-    quality: result.quality || null,
-    sizeText: null,
+    quality: result.quality,
+    sizeText: result.size,
+    duration: result.duration,
+    channel: result.channel,
     headers: BROWSER_HEADERS,
   }
 }
@@ -133,7 +166,6 @@ async function sendResult({ client, m, url, title, videoInfo, isAudio, asDocumen
   const { dl, title: apiTitle, headers: dlHeaders } = result
   const finalTitle = apiTitle || title
 
-  // ── Ficha bonita con portada + descripción, antes de mandar el archivo ──────
   let thumbBuffer = null
   if (videoInfo?.thumbnail) {
     try {
@@ -144,9 +176,15 @@ async function sendResult({ client, m, url, title, videoInfo, isAudio, asDocumen
   }
 
   const infoLines = [`✿ *${finalTitle}*`, '']
-  if (videoInfo?.duration) infoLines.push(`⌗» Duración › ${videoInfo.duration}`)
-  if (videoInfo?.views !== undefined) infoLines.push(`⌗» Vistas › ${videoInfo.views?.toLocaleString() || 0}`)
-  if (videoInfo?.author?.name) infoLines.push(`⌗» Canal › ${videoInfo.author.name}`)
+  if (result.duration || videoInfo?.duration) {
+    infoLines.push(`⌗» Duración › ${result.duration || videoInfo.duration}`)
+  }
+  if (videoInfo?.views !== undefined) {
+    infoLines.push(`⌗» Vistas › ${videoInfo.views?.toLocaleString() || 0}`)
+  }
+  if (result.channel || videoInfo?.author?.name) {
+    infoLines.push(`⌗» Canal › ${result.channel || videoInfo.author.name}`)
+  }
   if (videoInfo?.ago) infoLines.push(`⌗» Publicado › ${videoInfo.ago}`)
   if (result.quality) infoLines.push(`⌗» Calidad › ${result.quality}`)
   if (result.sizeText) infoLines.push(`⌗» Tamaño › ${result.sizeText}`)
@@ -155,12 +193,19 @@ async function sendResult({ client, m, url, title, videoInfo, isAudio, asDocumen
   const infoText = infoLines.join('\n')
 
   if (thumbBuffer) {
-    await client.sendMessage(m.chat, { image: thumbBuffer, caption: infoText }, { quoted: m })
+    await client.sendMessage(
+      m.chat,
+      { image: thumbBuffer, caption: infoText, contextInfo: newsletterContext() },
+      { quoted: m }
+    )
   } else {
-    await client.sendMessage(m.chat, { text: infoText }, { quoted: m })
+    await client.sendMessage(
+      m.chat,
+      { text: infoText, contextInfo: newsletterContext() },
+      { quoted: m }
+    )
   }
 
-  // ── Envío del archivo ─────────────────────────────────────────────────────
   if (isAudio) {
     await client.sendMessage(
       m.chat,
@@ -168,6 +213,7 @@ async function sendResult({ client, m, url, title, videoInfo, isAudio, asDocumen
         [asDocument ? 'document' : 'audio']: { url: dl },
         mimetype: 'audio/mpeg',
         fileName: `${finalTitle}.mp3`,
+        contextInfo: newsletterContext(),
       },
       { quoted: m }
     )
@@ -177,7 +223,12 @@ async function sendResult({ client, m, url, title, videoInfo, isAudio, asDocumen
   if (asDocument) {
     await client.sendMessage(
       m.chat,
-      { document: { url: dl }, fileName: `${finalTitle}.mp4`, mimetype: 'video/mp4' },
+      {
+        document: { url: dl },
+        fileName: `${finalTitle}.mp4`,
+        mimetype: 'video/mp4',
+        contextInfo: newsletterContext(),
+      },
       { quoted: m }
     )
     return
@@ -196,7 +247,12 @@ async function sendResult({ client, m, url, title, videoInfo, isAudio, asDocumen
   if (exceedsLimit) {
     await client.sendMessage(
       m.chat,
-      { document: { url: dl }, fileName: `${finalTitle}.mp4`, mimetype: 'video/mp4' },
+      {
+        document: { url: dl },
+        fileName: `${finalTitle}.mp4`,
+        mimetype: 'video/mp4',
+        contextInfo: newsletterContext(),
+      },
       { quoted: m }
     )
   } else {
