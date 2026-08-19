@@ -93,23 +93,14 @@ function waitForChoice(client, m, total, timeoutMs = 60000) {
         const sender = msg.key.participant || msg.key.remoteJid
         if (m.sender && sender !== m.sender) continue
 
-        const btnId =
-          msg.message?.buttonsResponseMessage?.selectedButtonId ||
-          msg.message?.templateButtonReplyMessage?.selectedId ||
-          msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId ||
-          null
-
-        if (btnId && btnId.startsWith('apk_')) {
-          const idx = Number(btnId.replace('apk_', ''))
-          if (!Number.isNaN(idx) && idx >= 0 && idx < total) return finish(idx)
-        }
-
         const text =
-          msg.message?.conversation ||
-          msg.message?.extendedTextMessage?.text ||
+          msg.message.conversation ||
+          msg.message.extendedTextMessage?.text ||
           ''
         const num = Number(text.trim())
-        if (!Number.isNaN(num) && num >= 1 && num <= total) return finish(num - 1)
+        if (!Number.isNaN(num) && num >= 1 && num <= total) {
+          return finish(num - 1)
+        }
       }
     }
 
@@ -139,20 +130,13 @@ export default {
         return sendApk(client, m, results[0])
       }
 
-      const preview = results
-        .map((app, i) => `*${i + 1}.* \( {app.name}\n   _ \){app.version} · ${app.size}_`)
-        .join('\n\n')
+      const NUM_EMOJI = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣']
 
-      const sections = [
-        {
-          title: 'Elige una app',
-          rows: results.map((app, i) => ({
-            title: `${i + 1}. ${app.name}`.slice(0, 24),
-            description: `${app.version} · ${app.size}`.slice(0, 72),
-            rowId: `apk_${i}`,
-          })),
-        },
-      ]
+      const preview = results
+        .map((app, i) => {
+          return `\( {NUM_EMOJI[i] || ` \){i + 1}.`} *\( {app.name}*\n     _ \){app.version} · ${app.size}_`
+        })
+        .join('\n\n')
 
       await client.sendMessage(
         m.chat,
@@ -163,12 +147,8 @@ export default {
             preview,
             '',
             '╰──────────────────╯',
-            '_Toca el menú o responde con el número._',
+            `_Responde con el número (1-${results.length})._`,
           ].join('\n'),
-          footer: '----- APK Downloader -----',
-          title: 'Resultados APK',
-          buttonText: 'Ver apps',
-          sections,
         },
         { quoted: m }
       )
