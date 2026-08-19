@@ -1,34 +1,101 @@
 import axios from 'axios'
 
-const APTOIDE_API_URL = 'https://nyxdlapi.vercel.app/api/search/aptoide'
-const APTOIDE_API_KEY = 'nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
+const NYXDL_API_KEY = 'nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
+const NYXDL_SEARCH_URL = 'https://nyxdlapi.vercel.app/api/search/aptoide'
 
-const pendingSelections = new Map()
+function formatSize(size) {
+  return size || '—'
+}
 
-async function searchApk(query, limit = 10) {
-  const res = await axios.get(APTOIDE_API_URL, {
+async function searchApk(query, limit = 6) {
+  const res = await axios.get(NYXDL_SEARCH_URL, {
     timeout: 15000,
     params: {
-      q: query,
+      query,
       limit,
-      apikey: APTOIDE_API_KEY,
+      apikey: NYXDL_API_KEY,
     },
   })
 
-  const data = res.data
-  if (!data?.status) throw new Error(data?.message || 'La API no devolvió resultados')
-
-  const results = data.result?.results
-  if (!Array.isArray(results) || !results.length) return []
+  const results = res.data?.result?.results
+  if (!res.data?.status || !Array.isArray(results) || !results.length) return []
 
   return results
+    .filter((a) => a?.download)
+    .map((a) => ({
+      name: a.name || a.packageName,
+      packageName: a.packageName,
+      version: a.version || 'Desconocida',
+      size: formatSize(a.size),
+      icon: a.icon || null,
+      download: a.download,
+      malware: a.malware || null,
+    }))
 }
 
-function limpiarSelecciones() {
-  const ahora = Date.now()
-  for (const [key, val] of pendingSelections) {
-    if (ahora - val.timestamp > 60000) pendingSelections.delete(key)
+async function sendApk(client, m, app) {
+  const caption = [
+    `✦ *${app.name}*`,
+    `✧ Paquete  › \`${app.packageName}\``,
+    `✧ Versión  › *${app.version}*`,
+    `✧ Tamaño   › *${app.size}*`,
+    `✐ Enviando APK...`,
+  ].join('\n')
+
+  if (app.icon) {
+    await client.sendMessage(m.chat, { image: { url: app.icon }, caption }, { quoted: m })
+  } else {
+    await client.sendMessage(m.chat, { text: caption }, { quoted: m })
   }
+
+  const safeName = (app.name || 'app').replace(/[^\w\s-]/gi, '').trim() || 'app'
+
+  await client.sendMessage(
+    m.chat,
+    {
+      document: { url: app.download },
+      fileName: `${safeName}.apk`,
+      mimetype: 'application/vnd.android.package-archive',
+    },
+    { quoted: m }
+  )
+}
+
+function waitForChoice(client, m, total, timeoutMs = 60000) {
+  return new Promise((resolve) => {
+    let done = false
+
+    const finish = (value) => {
+      if (done) return
+      done = true
+      clearTimeout(timer)
+      client.ev.off('messages.upsert', onUpsert)
+      resolve(value)
+    }
+
+    const timer = setTimeout(() => finish(null), timeoutMs)
+
+    const onUpsert = ({ messages }) => {
+      for (const msg of messages || []) {
+        if (!msg.message) continue
+        if (msg.key?.remoteJid !== m.chat) continue
+        const sender = msg.key.participant || msg.key.remoteJid
+        if (m.sender && sender !== m.sender) continue
+
+        const rowId = msg.message.listResponseMessage?.singleSelectReply?.selectedRowId
+        if (rowId?.startsWith('apkpick_')) {
+          const idx = Number(rowId.split('_')[1])
+          if (!Number.isNaN(idx) && idx >= 0 && idx < total) return finish(idx)
+        }
+
+        const text = msg.message.conversation || msg.message.extendedTextMessage?.text || ''
+        const num = Number(text.trim())
+        if (!Number.isNaN(num) && num >= 1 && num <= total) return finish(num - 1)
+      }
+    }
+
+    client.ev.on('messages.upsert', onUpsert)
+  })
 }
 
 export default {
@@ -42,96 +109,75 @@ export default {
 
     const query = args.join(' ').trim()
 
-    let results
     try {
-      results = await searchApk(query, 10)
-    } catch (e) {
-      console.error('[APK] Error búsqueda:', e?.response?.status, e?.response?.data || e?.message || e)
-      return m.reply('❌ Error al buscar. Intenta de nuevo.')
-    }
+      const results = await searchApk(query, 6)
 
-    if (!results.length) {
-      return m.reply('✘ No encontré ninguna aplicación con ese nombre.')
-    }
-
-    const top = results.slice(0, 5)
-
-    const rows = top.map((app, i) => ({
-      title: app.packageName || `Resultado ${i + 1}`,
-      description: `v${app.version || '?'} · ${app.size || '—'} · ${app.malware || 'SIN VERIFICAR'}`,
-      rowId: `apk_select_${i}`,
-    }))
-
-    const listMessage = {
-      text: `𐙚 Encontré *${top.length}* resultado(s) para "*${query}*".\nElige cuál quieres que te envíe:`,
-      footer: 'NyxDLaPI',
-      title: 'Resultados de búsqueda',
-      buttonText: 'Ver lista',
-      sections: [
-        {
-          title: 'Aplicaciones encontradas',
-          rows,
-        },
-      ],
-    }
-
-    await client.sendMessage(m.chat, listMessage, { quoted: m })
-
-    limpiarSelecciones()
-    const selectionKey = `${m.chat}_${m.sender}`
-    pendingSelections.set(selectionKey, { results: top, query, timestamp: Date.now() })
-  },
-
-  // Esto asume que tu bot dispara un evento/handler para
-  // listResponseMessage y te pasa 'm' con esa estructura. Si tu framework
-  // maneja las respuestas de listas distinto, dime cómo y lo adapto.
-  onListResponse: async ({ client, m }) => {
-    const selectionKey = `${m.chat}_${m.sender}`
-    const pending = pendingSelections.get(selectionKey)
-    if (!pending) return
-
-    const rowId = m.message?.listResponseMessage?.singleSelectReply?.selectedRowId
-    if (!rowId || !rowId.startsWith('apk_select_')) return
-
-    const index = parseInt(rowId.replace('apk_select_', ''), 10)
-    const data = pending.results[index]
-    pendingSelections.delete(selectionKey)
-
-    if (!data) return m.reply('❌ Selección inválida.')
-
-    if (data.malware === 'MALWARE') {
-      return m.reply('✘ Aptoide marcó esta app directamente como *MALWARE*. No la voy a enviar por seguridad.')
-    }
-
-    const caption = [
-      `𐙚 *${data.packageName}*`,
-      `⛁ Versión  › *${data.version}*`,
-      `⎘ Tamaño   › *${data.size}*`,
-      `⚠ Estado   › *${data.malware || 'SIN VERIFICAR'}*`,
-      `✐ Enviando APK...`,
-    ].join('\n')
-
-    try {
-      if (data.icon) {
-        await client.sendMessage(m.chat, { image: { url: data.icon }, caption }, { quoted: m })
-      } else {
-        await client.sendMessage(m.chat, { text: caption }, { quoted: m })
+      if (!results.length) {
+        return m.reply('✘ No encontré ninguna aplicación con ese nombre.')
       }
 
-      const safeName = data.packageName.replace(/[^\w.-]/gi, '') || 'app'
+      if (results.length === 1) {
+        const app = results[0]
+        if (app.malware && app.malware !== 'TRUSTED' && app.malware !== 'WARNING') {
+          return m.reply('✘ Esa app fue marcada como insegura, no la voy a enviar.')
+        }
+        return sendApk(client, m, app)
+      }
+
+      const NUM_EMOJI = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣']
+
+      const rows = results.map((app, i) => ({
+        title: `${NUM_EMOJI[i] || `${i + 1}.`} ${app.name}`.slice(0, 24),
+        description: `${app.version} • ${app.size}${app.malware === 'WARNING' ? ' ⚠️ Riesgo' : ''}`,
+        rowId: `apkpick_${i}`,
+      }))
+
+      const preview = results
+        .map((app, i) => {
+          const flag = app.malware === 'WARNING' ? ' ⚠️' : ''
+          return `${NUM_EMOJI[i] || `${i + 1}.`} *${app.name}*${flag}\n     _${app.version} · ${app.size}_`
+        })
+        .join('\n\n')
 
       await client.sendMessage(
         m.chat,
         {
-          document: { url: data.download },
-          fileName: `${safeName}.apk`,
-          mimetype: 'application/vnd.android.package-archive',
+          text: [
+            `╭─❑ *📦 RESULTADOS PARA "${query.toUpperCase()}"* ❑─╮`,
+            '',
+            preview,
+            '',
+            '╰──────────────────╯',
+            `_Toca el botón de abajo o responde con el número (1-${results.length})._`,
+          ].join('\n'),
+          footer: '🔍 NyxDLaPI · Aptoide Search',
+          title: '',
+          buttonText: '📲 Elegir juego',
+          sections: [
+            {
+              title: 'Resultados de la búsqueda',
+              rows,
+            },
+          ],
         },
         { quoted: m }
       )
+
+      const chosen = await waitForChoice(client, m, results.length)
+
+      if (chosen === null) {
+        return m.reply('⌛ Se acabó el tiempo para elegir. Vuelve a intentarlo con el comando.')
+      }
+
+      const app = results[chosen]
+      if (app.malware && app.malware !== 'TRUSTED' && app.malware !== 'WARNING') {
+        return m.reply('✘ Esa app fue marcada como insegura, no la voy a enviar.')
+      }
+
+      await sendApk(client, m, app)
     } catch (e) {
-      console.error('[APK] Error al enviar:', e?.message || e)
-      m.reply('❌ Error al enviar el archivo. Intenta de nuevo.')
+      console.error('[APK] Error:', e?.response?.status, e?.response?.data || e?.message || e)
+      m.reply('❌ Error al procesar la solicitud. Intenta de nuevo.')
     }
   },
 }
