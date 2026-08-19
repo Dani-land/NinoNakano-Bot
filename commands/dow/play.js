@@ -10,14 +10,25 @@ const BROWSER_HEADERS = {
 }
 
 const NYXDL_API_KEY = 'nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
-const NYXDL_AUDIO_URL = 'https://nyxdlapi.vercel.app/api/downloads/youtube'
-const NYXDL_VIDEO_URL = 'https://nyxdlapi.vercel.app/api/downloads/youtube/mp4'
+const NYXDL_BASE = 'https://nyxdlapi.vercel.app'
+const NYXDL_AUDIO_URL = `${NYXDL_BASE}/api/downloads/youtube`
+const NYXDL_VIDEO_URL = `${NYXDL_BASE}/api/downloads/youtube/mp4`
 
 const NEWSLETTER_JID = '120363420575743790@newsletter'
 const NEWSLETTER_NAME = 'ミ★ 𝙉𝙞𝙣𝙤 𝙐𝙥𝙙𝙖𝙩𝙚𝙨 ★彡'
 
 const isYTUrl = (url) =>
   /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|shorts\/|live\/)|youtu\.be\/).+$/i.test(url)
+
+function toAbsoluteUrl(maybeUrl) {
+  if (!maybeUrl || typeof maybeUrl !== 'string') return null
+  const u = maybeUrl.trim()
+  if (!u) return null
+  if (/^https?:\/\//i.test(u)) return u
+  if (u.startsWith('//')) return `https:${u}`
+  if (u.startsWith('/')) return `\( {NYXDL_BASE} \){u}`
+  return null
+}
 
 function newsletterContext() {
   return {
@@ -32,7 +43,10 @@ function newsletterContext() {
 }
 
 async function getBufferFromUrl(url, extraHeaders = {}) {
-  const res = await fetch(url, {
+  const absolute = toAbsoluteUrl(url)
+  if (!absolute) throw new Error(`URL de descarga inválida: ${url}`)
+
+  const res = await fetch(absolute, {
     redirect: 'follow',
     headers: { ...BROWSER_HEADERS, ...extraHeaders },
   })
@@ -58,9 +72,11 @@ async function getBufferFromUrl(url, extraHeaders = {}) {
 
 async function sendPlayableVideo(client, m, dl, title, thumbBuffer, extraHeaders) {
   const fileName = `${title}.mp4`
+  const absolute = toAbsoluteUrl(dl)
+  if (!absolute) throw new Error(`URL de video inválida: ${dl}`)
 
   try {
-    const buffer = await getBufferFromUrl(dl, extraHeaders)
+    const buffer = await getBufferFromUrl(absolute, extraHeaders)
 
     await client.sendMessage(
       m.chat,
@@ -82,7 +98,7 @@ async function sendPlayableVideo(client, m, dl, title, thumbBuffer, extraHeaders
   await client.sendMessage(
     m.chat,
     {
-      video: { url: dl },
+      video: { url: absolute },
       mimetype: 'video/mp4',
       fileName,
       ptv: false,
@@ -93,8 +109,13 @@ async function sendPlayableVideo(client, m, dl, title, thumbBuffer, extraHeaders
   )
 }
 
-async function requestNyxDL(baseUrl, url) {
-  const apiUrl = `\( {baseUrl}?url= \){encodeURIComponent(url)}&apikey=${NYXDL_API_KEY}`
+async function requestNyxDL(baseUrl, ytUrl) {
+  const absoluteYt = toAbsoluteUrl(ytUrl) || ytUrl
+  if (!absoluteYt || !/^https?:\/\//i.test(absoluteYt)) {
+    throw new Error(`URL de YouTube inválida: ${ytUrl}`)
+  }
+
+  const apiUrl = `\( {baseUrl}?url= \){encodeURIComponent(absoluteYt)}&apikey=${encodeURIComponent(NYXDL_API_KEY)}`
 
   const res = await fetch(apiUrl, {
     headers: { accept: 'application/json', 'user-agent': BROWSER_HEADERS['user-agent'] },
@@ -113,13 +134,15 @@ async function requestNyxDL(baseUrl, url) {
     throw new Error(`Respuesta inválida de NyxDL: ${text.slice(0, 200)}`)
   }
 
-  if (!data?.status || !data?.result?.download) {
-    throw new Error(data?.message || data?.result?.message || 'La API no devolvió un resultado válido.')
+  const r = data?.result
+  const download = toAbsoluteUrl(r?.download || r?.url || r?.datos?.url)
+
+  if (!data?.status || !download) {
+    throw new Error(data?.message || r?.message || 'La API no devolvió un link de descarga válido.')
   }
 
-  const r = data.result
   return {
-    download: r.download || r.url,
+    download,
     title: r.titulo || r.title || 'Sin título',
     duration: r.duracion || r.duration || null,
     channel: r.canal || r.channel || null,
@@ -165,13 +188,21 @@ async function sendResult({ client, m, url, title, videoInfo, isAudio, asDocumen
 
   const { dl, title: apiTitle, headers: dlHeaders } = result
   const finalTitle = apiTitle || title
+  const absoluteDl = toAbsoluteUrl(dl)
+
+  if (!absoluteDl) {
+    throw new Error(`No se obtuvo una URL de descarga válida de la API.`)
+  }
 
   let thumbBuffer = null
   if (videoInfo?.thumbnail) {
     try {
-      const response = await fetch(videoInfo.thumbnail)
-      const arrayBuffer = await response.arrayBuffer()
-      thumbBuffer = await sharp(Buffer.from(arrayBuffer)).resize(500, 281).jpeg({ quality: 85 }).toBuffer()
+      const thumbUrl = toAbsoluteUrl(videoInfo.thumbnail)
+      if (thumbUrl) {
+        const response = await fetch(thumbUrl)
+        const arrayBuffer = await response.arrayBuffer()
+        thumbBuffer = await sharp(Buffer.from(arrayBuffer)).resize(500, 281).jpeg({ quality: 85 }).toBuffer()
+      }
     } catch {}
   }
 
@@ -210,7 +241,7 @@ async function sendResult({ client, m, url, title, videoInfo, isAudio, asDocumen
     await client.sendMessage(
       m.chat,
       {
-        [asDocument ? 'document' : 'audio']: { url: dl },
+        [asDocument ? 'document' : 'audio']: { url: absoluteDl },
         mimetype: 'audio/mpeg',
         fileName: `${finalTitle}.mp3`,
         contextInfo: newsletterContext(),
@@ -224,7 +255,7 @@ async function sendResult({ client, m, url, title, videoInfo, isAudio, asDocumen
     await client.sendMessage(
       m.chat,
       {
-        document: { url: dl },
+        document: { url: absoluteDl },
         fileName: `${finalTitle}.mp4`,
         mimetype: 'video/mp4',
         contextInfo: newsletterContext(),
@@ -236,7 +267,7 @@ async function sendResult({ client, m, url, title, videoInfo, isAudio, asDocumen
 
   let exceedsLimit = false
   try {
-    const head = await fetch(dl, { method: 'HEAD', headers: BROWSER_HEADERS })
+    const head = await fetch(absoluteDl, { method: 'HEAD', headers: BROWSER_HEADERS })
     const contentLength = head.headers.get('content-length')
     const fileSize = contentLength ? parseInt(contentLength) / (1024 * 1024) : 0
     exceedsLimit = fileSize >= limit
@@ -248,7 +279,7 @@ async function sendResult({ client, m, url, title, videoInfo, isAudio, asDocumen
     await client.sendMessage(
       m.chat,
       {
-        document: { url: dl },
+        document: { url: absoluteDl },
         fileName: `${finalTitle}.mp4`,
         mimetype: 'video/mp4',
         contextInfo: newsletterContext(),
@@ -256,7 +287,7 @@ async function sendResult({ client, m, url, title, videoInfo, isAudio, asDocumen
       { quoted: m }
     )
   } else {
-    await sendPlayableVideo(client, m, dl, finalTitle, thumbBuffer, dlHeaders)
+    await sendPlayableVideo(client, m, absoluteDl, finalTitle, thumbBuffer, dlHeaders)
   }
 }
 
@@ -280,11 +311,12 @@ export default {
       let url, title, videoInfo
 
       if (isYTUrl(text)) {
-        url = text
+        url = text.startsWith('http') ? text : `https://${text}`
         try {
-          videoInfo = await yts({
-            videoId: new URL(url).searchParams.get('v') || url.split('/').pop(),
-          })
+          const id =
+            new URL(url).searchParams.get('v') ||
+            url.split('/').pop()?.split('?')[0]
+          videoInfo = await yts({ videoId: id })
           title = videoInfo?.title || 'Video'
         } catch {
           title = 'Video'
@@ -297,6 +329,10 @@ export default {
         videoInfo = search.all[0]
         title = videoInfo.title
         url = videoInfo.url
+      }
+
+      if (!url || !/^https?:\/\//i.test(url)) {
+        return m.reply('✘ No pude obtener una URL válida de YouTube.')
       }
 
       await sendResult({ client, m, url, title, videoInfo, isAudio, asDocument })
