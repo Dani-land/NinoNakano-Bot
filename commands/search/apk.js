@@ -7,6 +7,18 @@ function formatSize(size) {
   return size || '—'
 }
 
+function prettifyPackageName(pkg) {
+  if (!pkg) return 'App desconocida'
+  const parts = pkg.split('.')
+  const last = parts[parts.length - 1] || pkg
+  return last
+    .replace(/[_-]+/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+}
+
 async function searchApk(query, limit = 6) {
   const res = await axios.get(NYXDL_SEARCH_URL, {
     timeout: 15000,
@@ -23,7 +35,7 @@ async function searchApk(query, limit = 6) {
   return results
     .filter((a) => a?.download)
     .map((a) => ({
-      name: a.name || a.packageName,
+      name: a.name || prettifyPackageName(a.packageName),
       packageName: a.packageName,
       version: a.version || 'Desconocida',
       size: formatSize(a.size),
@@ -82,12 +94,6 @@ function waitForChoice(client, m, total, timeoutMs = 60000) {
         const sender = msg.key.participant || msg.key.remoteJid
         if (m.sender && sender !== m.sender) continue
 
-        const rowId = msg.message.listResponseMessage?.singleSelectReply?.selectedRowId
-        if (rowId?.startsWith('apkpick_')) {
-          const idx = Number(rowId.split('_')[1])
-          if (!Number.isNaN(idx) && idx >= 0 && idx < total) return finish(idx)
-        }
-
         const text = msg.message.conversation || msg.message.extendedTextMessage?.text || ''
         const num = Number(text.trim())
         if (!Number.isNaN(num) && num >= 1 && num <= total) return finish(num - 1)
@@ -126,12 +132,6 @@ export default {
 
       const NUM_EMOJI = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣']
 
-      const rows = results.map((app, i) => ({
-        title: `${NUM_EMOJI[i] || `${i + 1}.`} ${app.name}`.slice(0, 24),
-        description: `${app.version} • ${app.size}${app.malware === 'WARNING' ? ' ⚠️ Riesgo' : ''}`,
-        rowId: `apkpick_${i}`,
-      }))
-
       const preview = results
         .map((app, i) => {
           const flag = app.malware === 'WARNING' ? ' ⚠️' : ''
@@ -148,17 +148,8 @@ export default {
             preview,
             '',
             '╰──────────────────╯',
-            `_Toca el botón de abajo o responde con el número (1-${results.length})._`,
+            `_Responde con el número del juego que quieras (1-${results.length})._`,
           ].join('\n'),
-          footer: '🔍 NyxDLaPI · Aptoide Search',
-          title: '',
-          buttonText: '📲 Elegir juego',
-          sections: [
-            {
-              title: 'Resultados de la búsqueda',
-              rows,
-            },
-          ],
         },
         { quoted: m }
       )
