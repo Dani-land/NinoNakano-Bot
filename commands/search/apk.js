@@ -72,7 +72,7 @@ async function sendApk(client, m, app) {
   )
 }
 
-function waitForButton(client, m, results, timeoutMs = 60000) {
+function waitForChoice(client, m, total, timeoutMs = 60000) {
   return new Promise((resolve) => {
     let done = false
 
@@ -99,14 +99,17 @@ function waitForButton(client, m, results, timeoutMs = 60000) {
           msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId ||
           null
 
-        if (!btnId) continue
-
-        if (btnId.startsWith('apk_')) {
+        if (btnId && btnId.startsWith('apk_')) {
           const idx = Number(btnId.replace('apk_', ''))
-          if (!Number.isNaN(idx) && idx >= 0 && idx < results.length) {
-            return finish(idx)
-          }
+          if (!Number.isNaN(idx) && idx >= 0 && idx < total) return finish(idx)
         }
+
+        const text =
+          msg.message?.conversation ||
+          msg.message?.extendedTextMessage?.text ||
+          ''
+        const num = Number(text.trim())
+        if (!Number.isNaN(num) && num >= 1 && num <= total) return finish(num - 1)
       }
     }
 
@@ -136,23 +139,20 @@ export default {
         return sendApk(client, m, results[0])
       }
 
-      const buttons = results.slice(0, 3).map((app, i) => ({
-        buttonId: `apk_${i}`,
-        buttonText: { displayText: `${i + 1}. ${app.name.slice(0, 20)}` },
-        type: 1,
-      }))
-
-      const extraText =
-        results.length > 3
-          ? results
-              .slice(3)
-              .map((app, i) => `*${i + 4}.* \( {app.name}\n   _ \){app.version} · ${app.size}_`)
-              .join('\n\n')
-          : ''
-
       const preview = results
         .map((app, i) => `*${i + 1}.* \( {app.name}\n   _ \){app.version} · ${app.size}_`)
         .join('\n\n')
+
+      const sections = [
+        {
+          title: 'Elige una app',
+          rows: results.map((app, i) => ({
+            title: `${i + 1}. ${app.name}`.slice(0, 24),
+            description: `${app.version} · ${app.size}`.slice(0, 72),
+            rowId: `apk_${i}`,
+          })),
+        },
+      ]
 
       await client.sendMessage(
         m.chat,
@@ -163,19 +163,17 @@ export default {
             preview,
             '',
             '╰──────────────────╯',
-            '_Toca un botón o responde con el número._',
-            extraText ? `\n_Apps extra (escribe el número):_\n${extraText}` : '',
-          ]
-            .filter(Boolean)
-            .join('\n'),
+            '_Toca el menú o responde con el número._',
+          ].join('\n'),
           footer: '----- APK Downloader -----',
-          buttons,
-          headerType: 1,
+          title: 'Resultados APK',
+          buttonText: 'Ver apps',
+          sections,
         },
         { quoted: m }
       )
 
-      const chosen = await waitForButton(client, m, results)
+      const chosen = await waitForChoice(client, m, results.length)
 
       if (chosen === null) {
         return m.reply('⌛ Se acabó el tiempo para elegir. Vuelve a intentarlo con el comando.')
