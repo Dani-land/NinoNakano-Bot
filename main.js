@@ -224,7 +224,7 @@ export default async (client, m) => {
             'suggest', 'invite', 'invitar', 'setname', 'setbotname', 'setbanner',
             'setmenubanner', 'setusername', 'setpfp', 'setimage', 'setbotcurrency',
             'setbotprefix', 'setstatus', 'setbotowner', 'reload', 'codemod', 'qrmod',
-            'codepremium', 'qrpremium'
+            'codepremium', 'code', 'qrpremium'
         ]
         const allowedInPrivateForSelf = ['s', 'suno']
         const settings = global.db.data.settings[selfId]
