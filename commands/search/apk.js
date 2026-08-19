@@ -41,7 +41,6 @@ async function searchApk(query, limit = 6) {
       size: formatSize(a.size),
       icon: a.icon || null,
       download: a.download,
-      malware: a.malware || null,
     }))
 }
 
@@ -73,7 +72,7 @@ async function sendApk(client, m, app) {
   )
 }
 
-function waitForChoice(client, m, total, timeoutMs = 60000) {
+function waitForButton(client, m, results, timeoutMs = 60000) {
   return new Promise((resolve) => {
     let done = false
 
@@ -94,9 +93,20 @@ function waitForChoice(client, m, total, timeoutMs = 60000) {
         const sender = msg.key.participant || msg.key.remoteJid
         if (m.sender && sender !== m.sender) continue
 
-        const text = msg.message.conversation || msg.message.extendedTextMessage?.text || ''
-        const num = Number(text.trim())
-        if (!Number.isNaN(num) && num >= 1 && num <= total) return finish(num - 1)
+        const btnId =
+          msg.message?.buttonsResponseMessage?.selectedButtonId ||
+          msg.message?.templateButtonReplyMessage?.selectedId ||
+          msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId ||
+          null
+
+        if (!btnId) continue
+
+        if (btnId.startsWith('apk_')) {
+          const idx = Number(btnId.replace('apk_', ''))
+          if (!Number.isNaN(idx) && idx >= 0 && idx < results.length) {
+            return finish(idx)
+          }
+        }
       }
     }
 
@@ -123,20 +133,25 @@ export default {
       }
 
       if (results.length === 1) {
-        const app = results[0]
-        if (app.malware && app.malware !== 'TRUSTED' && app.malware !== 'WARNING') {
-          return m.reply('✘ Esa app fue marcada como insegura, no la voy a enviar.')
-        }
-        return sendApk(client, m, app)
+        return sendApk(client, m, results[0])
       }
 
-      const NUM_EMOJI = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣']
+      const buttons = results.slice(0, 3).map((app, i) => ({
+        buttonId: `apk_${i}`,
+        buttonText: { displayText: `${i + 1}. ${app.name.slice(0, 20)}` },
+        type: 1,
+      }))
+
+      const extraText =
+        results.length > 3
+          ? results
+              .slice(3)
+              .map((app, i) => `*${i + 4}.* \( {app.name}\n   _ \){app.version} · ${app.size}_`)
+              .join('\n\n')
+          : ''
 
       const preview = results
-        .map((app, i) => {
-          const flag = app.malware === 'WARNING' ? ' ⚠️' : ''
-          return `${NUM_EMOJI[i] || `${i + 1}.`} *${app.name}*${flag}\n     _${app.version} · ${app.size}_`
-        })
+        .map((app, i) => `*${i + 1}.* \( {app.name}\n   _ \){app.version} · ${app.size}_`)
         .join('\n\n')
 
       await client.sendMessage(
@@ -148,24 +163,25 @@ export default {
             preview,
             '',
             '╰──────────────────╯',
-            `_Responde con el número del juego que quieras (1-${results.length})._`,
-          ].join('\n'),
+            '_Toca un botón o responde con el número._',
+            extraText ? `\n_Apps extra (escribe el número):_\n${extraText}` : '',
+          ]
+            .filter(Boolean)
+            .join('\n'),
+          footer: '----- APK Downloader -----',
+          buttons,
+          headerType: 1,
         },
         { quoted: m }
       )
 
-      const chosen = await waitForChoice(client, m, results.length)
+      const chosen = await waitForButton(client, m, results)
 
       if (chosen === null) {
         return m.reply('⌛ Se acabó el tiempo para elegir. Vuelve a intentarlo con el comando.')
       }
 
-      const app = results[chosen]
-      if (app.malware && app.malware !== 'TRUSTED' && app.malware !== 'WARNING') {
-        return m.reply('✘ Esa app fue marcada como insegura, no la voy a enviar.')
-      }
-
-      await sendApk(client, m, app)
+      await sendApk(client, m, results[chosen])
     } catch (e) {
       console.error('[APK] Error:', e?.response?.status, e?.response?.data || e?.message || e)
       m.reply('❌ Error al procesar la solicitud. Intenta de nuevo.')
