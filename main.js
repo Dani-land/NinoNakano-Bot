@@ -201,7 +201,8 @@ export default async (client, m) => {
     const text = args.join(" ")
 
     if (!global.comandos.has(command)) {
-        return m.reply(`ꕤ El comando *${command}* no existe.\n✎ Usa *${usedPrefix}help* para ver la lista de comandos disponibles.`)
+        return m.reply(`୨୧ El comando *${command}* no existe.\n\n` +
+`꒰୨୧꒱ Escribe *${usedPrefix}help* para ver todos los comandos disponibles.`)
     }
 
     const cmdData = global.comandos.get(command)
