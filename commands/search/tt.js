@@ -1,112 +1,160 @@
 import axios from 'axios'
 
-function pickResults(data) {
-  return data?.data?.videos || []
-}
+const NYXDL_API_KEY = 'nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
+const NYXDL_TT_SEARCH = 'https://nyxdlapi.vercel.app/api/search/tiktoksearch'
 
-function getVideoUrl(v) {
-  return v?.play || v?.wmplay || v?.hdplay || null
-}
-
-function getAuthor(v) {
-  return v?.author?.unique_id || v?.author?.nickname || 'desconocido'
+function formatCount(n) {
+  var num = Number(n || 0)
+  if (Number.isNaN(num)) return '0'
+  return num.toLocaleString()
 }
 
 function getTitle(v) {
-  const t = v?.title || 'Sin descripción'
-  return t.length > 80 ? t.slice(0, 80) + '...' : t
-}
-
-function formatCount(n) {
-  const num = Number(n || 0)
-  if (Number.isNaN(num)) return '0'
-  return num.toLocaleString()
+  var t = (v && v.title) || 'Sin descripción'
+  if (t.length > 80) return t.slice(0, 80) + '...'
+  return t
 }
 
 export default {
   command: ['tiktoksearch', 'ttsearch', 'tts'],
   category: 'search',
 
-  run: async ({ client, m, args }) => {
+  run: async function (ctx) {
+    var client = ctx.client
+    var m = ctx.m
+    var args = ctx.args || []
+
     if (!args.length) {
       return m.reply('✧ Ingresa algo para buscar en TikTok.')
     }
 
-    const query = args.join(' ').trim()
+    var query = args.join(' ').trim()
 
     try {
-      const url = `https://www.tikwm.com/api/feed/search`
+      var apiUrl =
+        NYXDL_TT_SEARCH +
+        '?q=' +
+        encodeURIComponent(query) +
+        '&apikey=' +
+        encodeURIComponent(NYXDL_API_KEY)
 
-      const { data, status } = await axios.get(url, {
-        params: {
-          keywords: query,
-          count: 10,
-          cursor: 0,
-          hd: 1
-        },
-        timeout: 25000,
+      var res = await axios.get(apiUrl, {
+        timeout: 30000,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-          'Referer': 'https://www.tikwm.com/',
-          'Accept': 'application/json, text/plain, */*',
-          'Accept-Language': 'en-US,en;q=0.9'
-        }
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          Accept: 'application/json',
+        },
       })
 
-      console.log('[tiktoksearch] HTTP status:', status, '| code:', data?.code)
-      console.log('[tiktoksearch] respuesta cruda:', JSON.stringify(data).slice(0, 1500))
-
-      const results = pickResults(data)
+      var data = res.data
+      var results =
+        (data && data.result && data.result.results) ||
+        (data && data.result && data.result.resultados) ||
+        (data && data.results) ||
+        []
 
       if (!Array.isArray(results) || !results.length) {
+        return m.reply('✘ No encontré resultados para *' + query + '*')
+      }
+
+      var usable = results
+        .map(function (v) {
+          return {
+            url: v.video || v.videoWatermarked || null,
+            title: getTitle(v),
+            author: v.username || v.author || 'desconocido',
+            likes: v.likes || 0,
+            views: v.views || 0,
+            duration: v.duration || 0,
+            link: v.url || null,
+          }
+        })
+        .filter(function (v) {
+          return !!v.url
+        })
+
+      if (!usable.length) {
         return m.reply(
-          `✘ No encontré resultados para *${query}*\n\n(revisa la consola de tu bot: busca "[tiktoksearch] respuesta cruda" para ver qué devolvió la API)`
+          '✘ Encontré resultados, pero no pude obtener los enlaces de video para *' + query + '*'
         )
       }
 
-      const usable = results
-        .map((v) => ({
-          url: getVideoUrl(v),
-          title: getTitle(v),
-          author: getAuthor(v),
-          likes: v?.digg_count || 0,
-          views: v?.play_count || 0
-        }))
-        .filter(v => v.url)
+      var top = usable.slice(0, 6)
 
-      if (!usable.length) {
-        return m.reply(`✘ Encontré resultados, pero no pude obtener los enlaces de video para *${query}*`)
-      }
+      var album = top.map(function (v, i) {
+        var caption =
+          '*ꕥ TikTok Búsqueda*\n' +
+          '⌗» ' +
+          (i + 1) +
+          '. ' +
+          v.title +
+          '\n' +
+          '♡ @' +
+          v.author +
+          '\n' +
+          '♡ ' +
+          formatCount(v.likes) +
+          ' Likes  •  ▶ ' +
+          formatCount(v.views) +
+          ' Views'
 
-      const top = usable.slice(0, 7)
+        return {
+          video: { url: v.url },
+          caption: caption,
+        }
+      })
 
-      for (let i = 0; i < top.length; i++) {
-        const v = top[i]
+      try {
+        await client.sendMessage(
+          m.chat,
+          {
+            album: album,
+          },
+          { quoted: m }
+        )
+      } catch (albumErr) {
+        console.log('[tiktoksearch] album falló, enviando uno por uno:', albumErr.message)
+        for (var i = 0; i < top.length; i++) {
+          var v = top[i]
+          var caption =
+            '*ꕥ TikTok Búsqueda*\n' +
+            '⌗» ' +
+            (i + 1) +
+            '. ' +
+            v.title +
+            '\n' +
+            '♡ @' +
+            v.author +
+            '\n' +
+            '♡ ' +
+            formatCount(v.likes) +
+            ' Likes  •  ▶ ' +
+            formatCount(v.views) +
+            ' Views'
 
-        const caption =
-          `*ꕥ TikTok Búsqueda*\n` +
-          `⌗» ${i + 1}. ${v.title}\n` +
-          `♡ @${v.author}\n` +
-          `♡ ${formatCount(v.likes)} Likes  •  ▶ ${formatCount(v.views)} Views`
-
-        try {
-          await client.sendMessage(
-            m.chat,
-            { video: { url: v.url }, caption },
-            { quoted: m }
-          )
-        } catch {
-          await client.sendMessage(
-            m.chat,
-            { text: `${caption}\n\n${v.url}` },
-            { quoted: m }
-          )
+          try {
+            await client.sendMessage(
+              m.chat,
+              { video: { url: v.url }, caption: caption },
+              { quoted: m }
+            )
+          } catch (e) {
+            await client.sendMessage(
+              m.chat,
+              { text: caption + '\n\n' + v.url },
+              { quoted: m }
+            )
+          }
         }
       }
-
     } catch (e) {
-      console.log('[tiktoksearch] ERROR:', e?.response?.status, e?.response?.data || e.message)
-      m.reply(`❌ Error al buscar videos.\n\n${e.message || e}`)
+      console.log(
+        '[tiktoksearch] ERROR:',
+        e && e.response && e.response.status,
+        (e && e.response && e.response.data) || e.message
+      )
+      m.reply('❌ Error al buscar videos.\n\n' + (e.message || e))
     }
-  }
+  },
 }
