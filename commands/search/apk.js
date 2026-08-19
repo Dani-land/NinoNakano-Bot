@@ -1,38 +1,33 @@
 import axios from 'axios'
 
-const APTOIDE_SEARCH_URL = 'https://ws75.aptoide.com/api/7/apps/search'
+const APTOIDE_API_URL = 'https://nyxdlapi.vercel.app/api/search/aptoide'
+const APTOIDE_API_KEY = 'nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
 
-function formatSize(bytes) {
-  if (!bytes) return '—'
-  const mb = Number(bytes) / 1024 / 1024
-  return `${mb.toFixed(1)} MB`
-}
+const pendingSelections = new Map()
 
-async function searchApk(query) {
-  const res = await axios.get(APTOIDE_SEARCH_URL, {
-    timeout: 12000,
+async function searchApk(query, limit = 10) {
+  const res = await axios.get(APTOIDE_API_URL, {
+    timeout: 15000,
     params: {
-      query,
-      limit: 5,
-      // 'trusted' filtra apps marcadas como confiables por Aptoide (menos riesgo de spam/duplicados raros)
+      q: query,
+      limit,
+      apikey: APTOIDE_API_KEY,
     },
   })
 
-  const list = res.data?.datalist?.list
-  if (!Array.isArray(list) || !list.length) return null
+  const data = res.data
+  if (!data?.status) throw new Error(data?.message || 'La API no devolvió resultados')
 
-  // Preferimos el primer resultado que tenga un link de descarga válido
-  const app = list.find((a) => a?.file?.path) || list[0]
-  if (!app?.file?.path) return null
+  const results = data.result?.results
+  if (!Array.isArray(results) || !results.length) return []
 
-  return {
-    name: app.name,
-    packageName: app.package,
-    version: app.file?.vername || 'Desconocida',
-    size: formatSize(app.file?.filesize),
-    icon: app.icon || null,
-    download: app.file.path,
-    malware: app.file?.malware?.rank || null, // 'TRUSTED', 'WARN', 'MALWARE', etc.
+  return results
+}
+
+function limpiarSelecciones() {
+  const ahora = Date.now()
+  for (const [key, val] of pendingSelections) {
+    if (ahora - val.timestamp > 60000) pendingSelections.delete(key)
   }
 }
 
@@ -47,33 +42,83 @@ export default {
 
     const query = args.join(' ').trim()
 
+    let results
     try {
-      const data = await searchApk(query)
+      results = await searchApk(query, 10)
+    } catch (e) {
+      console.error('[APK] Error búsqueda:', e?.response?.status, e?.response?.data || e?.message || e)
+      return m.reply('❌ Error al buscar. Intenta de nuevo.')
+    }
 
-      if (!data) {
-        return m.reply('✘ No encontré ninguna aplicación con ese nombre.')
-      }
+    if (!results.length) {
+      return m.reply('✘ No encontré ninguna aplicación con ese nombre.')
+    }
 
-      // Si Aptoide marca la app como maliciosa, no la mandamos
-      if (data.malware && data.malware !== 'TRUSTED' && data.malware !== 'WARN') {
-        return m.reply('✘ Esa app fue marcada como insegura por Aptoide, no la voy a enviar.')
-      }
+    const top = results.slice(0, 5)
 
-      const caption = [
-        `𐙚 *${data.name}*`,
-        `✧ Paquete  › \`${data.packageName}\``,
-        `⛁ Versión  › *${data.version}*`,
-        `⎘ Tamaño   › *${data.size}*`,
-        `✐ Enviando APK...`,
-      ].join('\n')
+    const rows = top.map((app, i) => ({
+      title: app.packageName || `Resultado ${i + 1}`,
+      description: `v${app.version || '?'} · ${app.size || '—'} · ${app.malware || 'SIN VERIFICAR'}`,
+      rowId: `apk_select_${i}`,
+    }))
 
+    const listMessage = {
+      text: `𐙚 Encontré *${top.length}* resultado(s) para "*${query}*".\nElige cuál quieres que te envíe:`,
+      footer: 'NyxDLaPI',
+      title: 'Resultados de búsqueda',
+      buttonText: 'Ver lista',
+      sections: [
+        {
+          title: 'Aplicaciones encontradas',
+          rows,
+        },
+      ],
+    }
+
+    await client.sendMessage(m.chat, listMessage, { quoted: m })
+
+    limpiarSelecciones()
+    const selectionKey = `${m.chat}_${m.sender}`
+    pendingSelections.set(selectionKey, { results: top, query, timestamp: Date.now() })
+  },
+
+  // Esto asume que tu bot dispara un evento/handler para
+  // listResponseMessage y te pasa 'm' con esa estructura. Si tu framework
+  // maneja las respuestas de listas distinto, dime cómo y lo adapto.
+  onListResponse: async ({ client, m }) => {
+    const selectionKey = `${m.chat}_${m.sender}`
+    const pending = pendingSelections.get(selectionKey)
+    if (!pending) return
+
+    const rowId = m.message?.listResponseMessage?.singleSelectReply?.selectedRowId
+    if (!rowId || !rowId.startsWith('apk_select_')) return
+
+    const index = parseInt(rowId.replace('apk_select_', ''), 10)
+    const data = pending.results[index]
+    pendingSelections.delete(selectionKey)
+
+    if (!data) return m.reply('❌ Selección inválida.')
+
+    if (data.malware === 'MALWARE') {
+      return m.reply('✘ Aptoide marcó esta app directamente como *MALWARE*. No la voy a enviar por seguridad.')
+    }
+
+    const caption = [
+      `𐙚 *${data.packageName}*`,
+      `⛁ Versión  › *${data.version}*`,
+      `⎘ Tamaño   › *${data.size}*`,
+      `⚠ Estado   › *${data.malware || 'SIN VERIFICAR'}*`,
+      `✐ Enviando APK...`,
+    ].join('\n')
+
+    try {
       if (data.icon) {
         await client.sendMessage(m.chat, { image: { url: data.icon }, caption }, { quoted: m })
       } else {
         await client.sendMessage(m.chat, { text: caption }, { quoted: m })
       }
 
-      const safeName = data.name.replace(/[^\w\s-]/gi, '').trim() || 'app'
+      const safeName = data.packageName.replace(/[^\w.-]/gi, '') || 'app'
 
       await client.sendMessage(
         m.chat,
@@ -85,9 +130,8 @@ export default {
         { quoted: m }
       )
     } catch (e) {
-      // Log detallado para poder diagnosticar sin adivinar xd
-      console.error('[APK] Error:', e?.response?.status, e?.response?.data || e?.message || e)
-      m.reply('❌ Error al procesar la solicitud. Intenta de nuevo.')
+      console.error('[APK] Error al enviar:', e?.message || e)
+      m.reply('❌ Error al enviar el archivo. Intenta de nuevo.')
     }
   },
 }
