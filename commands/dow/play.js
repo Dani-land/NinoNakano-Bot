@@ -65,7 +65,6 @@ async function callNyxDL(endpoint, ytUrl) {
     throw new Error('URL de YouTube inválida: ' + ytUrl)
   }
 
-  // SIN template literals — concatenación pura
   var apiUrl =
     endpoint +
     '?url=' +
@@ -75,43 +74,80 @@ async function callNyxDL(endpoint, ytUrl) {
 
   console.log('[NyxDL] GET', apiUrl)
 
-  var res = await fetch(apiUrl, {
-    headers: { accept: 'application/json', 'user-agent': HEADERS['user-agent'] },
-  })
-  var text = await res.text()
+  var lastErr = null
+  var attempts = 2
 
-  if (!res.ok) {
-    throw new Error('NyxDL HTTP ' + res.status + ': ' + text.slice(0, 180))
+  for (var i = 1; i <= attempts; i++) {
+    try {
+      var controller = typeof AbortController !== 'undefined' ? new AbortController() : null
+      var timer = null
+      if (controller) {
+        timer = setTimeout(function () {
+          controller.abort()
+        }, 90000)
+      }
+
+      var res = await fetch(apiUrl, {
+        headers: { accept: 'application/json', 'user-agent': HEADERS['user-agent'] },
+        timeout: 90000,
+        signal: controller ? controller.signal : undefined,
+      })
+
+      if (timer) clearTimeout(timer)
+
+      var text = await res.text()
+
+      if (!res.ok) {
+        throw new Error('NyxDL HTTP ' + res.status + ': ' + text.slice(0, 180))
+      }
+
+      var data
+      try {
+        data = JSON.parse(text)
+      } catch (e) {
+        throw new Error('NyxDL no devolvió JSON: ' + text.slice(0, 180))
+      }
+
+      var r = data && data.result ? data.result : {}
+      var dl =
+        abs(r.download_url) ||
+        abs(r.download) ||
+        abs(r.url) ||
+        abs(r.datos && r.datos.url) ||
+        abs(r.datos && r.datos.download)
+
+      if (!data || !data.status || !dl) {
+        throw new Error((data && data.message) || 'NyxDL no devolvió link de descarga.')
+      }
+
+      return {
+        dl: dl,
+        title: r.title || r.titulo || 'Sin título',
+        duration: r.duration || r.duracion || null,
+        channel: r.channel || r.canal || null,
+        quality: r.quality || (r.datos && r.datos.calidad) || null,
+        size: r.size || (r.datos && r.datos['tamaño']) || null,
+        thumbnail: abs(r.thumbnail) || null,
+      }
+    } catch (e) {
+      lastErr = e
+      var msg = (e && e.message) || String(e)
+      console.log('[NyxDL] intento ' + i + '/' + attempts + ' falló:', msg)
+
+      if (i < attempts && /ETIMEDOUT|timeout|aborted|ECONNRESET|ENOTFOUND|network/i.test(msg)) {
+        await new Promise(function (r) {
+          setTimeout(r, 2000)
+        })
+        continue
+      }
+      break
+    }
   }
 
-  var data
-  try {
-    data = JSON.parse(text)
-  } catch (e) {
-    throw new Error('NyxDL no devolvió JSON: ' + text.slice(0, 180))
-  }
-
-  var r = data && data.result ? data.result : {}
-  var dl =
-    abs(r.download_url) ||
-    abs(r.download) ||
-    abs(r.url) ||
-    abs(r.datos && r.datos.url) ||
-    abs(r.datos && r.datos.download)
-
-  if (!data || !data.status || !dl) {
-    throw new Error((data && data.message) || 'NyxDL no devolvió link de descarga.')
-  }
-
-  return {
-    dl: dl,
-    title: r.title || r.titulo || 'Sin título',
-    duration: r.duration || r.duracion || null,
-    channel: r.channel || r.canal || null,
-    quality: r.quality || (r.datos && r.datos.calidad) || null,
-    size: r.size || (r.datos && r.datos['tamaño']) || null,
-    thumbnail: abs(r.thumbnail) || null,
-  }
+  throw new Error(
+    'No se pudo conectar con la API (timeout). Prueba de nuevo en unos segundos.\nDetalle: ' +
+      ((lastErr && lastErr.message) || 'ETIMEDOUT')
+  )
 }
 
 async function sendResult(opts) {
@@ -150,17 +186,14 @@ async function sendResult(opts) {
   var lines = ['✿ *' + finalTitle + '*', '']
   if (result.duration || (videoInfo && (videoInfo.timestamp || videoInfo.duration))) {
     lines.push(
-      '⌗» Duración › ' +
-        (result.duration || videoInfo.timestamp || videoInfo.duration)
+      '⌗» Duración › ' + (result.duration || videoInfo.timestamp || videoInfo.duration)
     )
   }
   if (videoInfo && videoInfo.views != null) {
     lines.push('⌗» Vistas › ' + Number(videoInfo.views).toLocaleString())
   }
   if (result.channel || (videoInfo && videoInfo.author && videoInfo.author.name)) {
-    lines.push(
-      '⌗» Canal › ' + (result.channel || videoInfo.author.name)
-    )
+    lines.push('⌗» Canal › ' + (result.channel || videoInfo.author.name))
   }
   if (videoInfo && videoInfo.ago) lines.push('⌗» Publicado › ' + videoInfo.ago)
   if (result.quality) lines.push('⌗» Calidad › ' + result.quality)
