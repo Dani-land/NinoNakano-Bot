@@ -318,8 +318,8 @@ export default {
         return client.reply(m.chat, '✐ Ingresa un nombre o URL de YouTube.', m)
       }
 
-      var isAudio = ['play', 'mp3', 'playaudio', 'ytmp3', 'playdoc', 'play2'].indexOf(command) !== -1
-      var asDocument = ['playdoc', 'mp4doc'].indexOf(command) !== -1
+      var isAudio = ['play', 'mp3', 'playaudio', 'ytmp3'].indexOf(command) !== -1
+      var asDocument = ['mp4doc'].indexOf(command) !== -1
 
       var url
       var title
