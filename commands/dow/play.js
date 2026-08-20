@@ -319,7 +319,7 @@ export default {
       }
 
       var isAudio = ['play', 'mp3', 'playaudio', 'ytmp3'].indexOf(command) !== -1
-      var asDocument = ['mp4doc'].indexOf(command) !== -1
+      var asDocument = ['mp4doc', 'playdoc', 'ytmp4'].indexOf(command) !== -1
 
       var url
       var title
