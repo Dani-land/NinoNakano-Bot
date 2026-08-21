@@ -111,8 +111,12 @@ export default {
         return m.reply('✘ No encontré resultados para *' + query + '*')
       }
 
-      var top = results.slice(0, 5)
-      await m.reply('✐ Encontré *' + results.length + '* resultados. Descargando *' + top.length + '* videos...')
+      // TODOS los resultados encontrados
+      var top = results
+
+      await m.reply(
+        '✐ Encontré *' + results.length + '* resultados. Descargando todos...'
+      )
 
       var usable = []
 
