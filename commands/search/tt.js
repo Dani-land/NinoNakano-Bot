@@ -1,8 +1,8 @@
 import axios from 'axios'
 
 const NYXDL_API_KEY = 'nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
+const NYXDL_BASE = 'https://nyxdlapi.vercel.app'
 const NYXDL_TT_SEARCH = 'https://nyxdlapi.vercel.app/api/search/tiktoksearch'
-const NYXDL_TT_DL = 'https://nyxdlapi.vercel.app/api/downloads/tiktok'
 
 function formatCount(n) {
   var num = Number(n || 0)
@@ -32,40 +32,14 @@ function getStats(v) {
   }
 }
 
-async function downloadTikTok(tiktokUrl) {
-  var apiUrl =
-    NYXDL_TT_DL +
-    '?url=' +
-    encodeURIComponent(tiktokUrl) +
-    '&apikey=' +
-    encodeURIComponent(NYXDL_API_KEY)
-
-  var res = await axios.get(apiUrl, {
-    timeout: 45000,
-    headers: {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      Accept: 'application/json',
-    },
-  })
-
-  var data = res.data
-  var r = (data && data.result) || data || {}
-
-  var videoUrl =
-    r.download ||
-    r.downloadNoWatermark ||
-    r.video ||
-    r.url ||
-    (r.data && (r.data.play || r.data.hdplay || r.data.wmplay)) ||
-    null
-
-  if (!videoUrl || typeof videoUrl !== 'string') {
-    throw new Error('Sin link de video')
-  }
-
-  if (videoUrl.indexOf('//') === 0) videoUrl = 'https:' + videoUrl
-  return videoUrl
+function toAbsolute(u) {
+  if (!u || typeof u !== 'string') return null
+  var s = u.trim()
+  if (!s) return null
+  if (/^https?:\/\//i.test(s)) return s
+  if (s.indexOf('//') === 0) return 'https:' + s
+  if (s.charAt(0) === '/') return NYXDL_BASE + s
+  return null
 }
 
 export default {
@@ -111,41 +85,31 @@ export default {
         return m.reply('✘ No encontré resultados para *' + query + '*')
       }
 
-      // TODOS los resultados encontrados
-      var top = results
-
-      await m.reply(
-        '✐ Encontré *' + results.length + '* resultados. Descargando todos...'
-      )
-
-      var usable = []
-
-      for (var i = 0; i < top.length; i++) {
-        var item = top[i]
-        var tiktokPage = item.url || item.link || null
-        if (!tiktokPage) continue
-
-        try {
-          var videoUrl = await downloadTikTok(tiktokPage)
-          var stats = getStats(item)
-          usable.push({
-            url: videoUrl,
-            title: getTitle(item),
-            author: getAuthor(item),
+      var usable = results
+        .map(function (v) {
+          var stats = getStats(v)
+          return {
+            url: toAbsolute(v.video || v.videoWatermarked),
+            title: getTitle(v),
+            author: getAuthor(v),
             likes: stats.likes,
             views: stats.views,
-            link: tiktokPage,
-          })
-        } catch (e) {
-          console.log('[tiktoksearch] no se pudo descargar', tiktokPage, e.message)
-        }
-      }
+            link: v.url || null,
+          }
+        })
+        .filter(function (v) {
+          return !!v.url
+        })
 
       if (!usable.length) {
         return m.reply(
-          '✘ Encontré resultados, pero no pude descargar los videos para *' + query + '*'
+          '✘ Encontré resultados, pero no pude obtener los videos para *' + query + '*'
         )
       }
+
+      await m.reply(
+        '✐ Encontré *' + results.length + '* resultados. Enviando *' + usable.length + '* videos...'
+      )
 
       var album = usable.map(function (v, idx) {
         var caption =
