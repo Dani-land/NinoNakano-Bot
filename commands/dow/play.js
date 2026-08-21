@@ -145,7 +145,7 @@ async function callNyxDL(endpoint, ytUrl) {
   }
 
   throw new Error(
-    'No se pudo conectar con la API (timeout). Prueba de nuevo en unos segundos.\nDetalle: ' +
+    'No se pudo conectar con la API (timeout). Prueba de nuevo.\nDetalle: ' +
       ((lastErr && lastErr.message) || 'ETIMEDOUT')
   )
 }
@@ -292,6 +292,146 @@ async function sendResult(opts) {
   }
 }
 
+function parseButtonId(msg) {
+  try {
+    var ir = msg.message && msg.message.interactiveResponseMessage
+    if (ir && ir.nativeFlowResponseMessage) {
+      var raw = ir.nativeFlowResponseMessage.paramsJson
+      if (raw) {
+        var parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+        if (parsed && parsed.id) return String(parsed.id)
+      }
+    }
+  } catch (e) {}
+
+  var btn =
+    (msg.message && msg.message.buttonsResponseMessage && msg.message.buttonsResponseMessage.selectedButtonId) ||
+    (msg.message && msg.message.templateButtonReplyMessage && msg.message.templateButtonReplyMessage.selectedId) ||
+    (msg.message &&
+      msg.message.listResponseMessage &&
+      msg.message.listResponseMessage.singleSelectReply &&
+      msg.message.listResponseMessage.singleSelectReply.selectedRowId) ||
+    null
+
+  return btn ? String(btn) : null
+}
+
+function waitForFormat(client, m, timeoutMs) {
+  timeoutMs = timeoutMs || 60000
+  return new Promise(function (resolve) {
+    var done = false
+
+    function finish(value) {
+      if (done) return
+      done = true
+      clearTimeout(timer)
+      client.ev.off('messages.upsert', onUpsert)
+      resolve(value)
+    }
+
+    var timer = setTimeout(function () {
+      finish(null)
+    }, timeoutMs)
+
+    function onUpsert(ev) {
+      var messages = ev.messages || []
+      for (var i = 0; i < messages.length; i++) {
+        var msg = messages[i]
+        if (!msg.message) continue
+        if (msg.key && msg.key.remoteJid !== m.chat) continue
+        var sender = (msg.key && (msg.key.participant || msg.key.remoteJid)) || ''
+        if (m.sender && sender !== m.sender) continue
+
+        var id = parseButtonId(msg)
+        if (id === 'play_audio') return finish({ isAudio: true, asDocument: false })
+        if (id === 'play_adoc') return finish({ isAudio: true, asDocument: true })
+        if (id === 'play_video') return finish({ isAudio: false, asDocument: false })
+        if (id === 'play_vdoc') return finish({ isAudio: false, asDocument: true })
+
+        var text =
+          (msg.message.conversation ||
+            (msg.message.extendedTextMessage && msg.message.extendedTextMessage.text) ||
+            '') + ''
+        text = text.trim()
+        if (text === '1') return finish({ isAudio: true, asDocument: false })
+        if (text === '2') return finish({ isAudio: true, asDocument: true })
+        if (text === '3') return finish({ isAudio: false, asDocument: false })
+        if (text === '4') return finish({ isAudio: false, asDocument: true })
+      }
+    }
+
+    client.ev.on('messages.upsert', onUpsert)
+  })
+}
+
+async function sendFormatButtons(client, m, title) {
+  var bodyText =
+    '✿ *' +
+    (title || 'YouTube') +
+    '*\n\n' +
+    'Elige el formato:\n' +
+    '1. 🎵 Audio\n' +
+    '2. 📄 Audio (documento)\n' +
+    '3. 🎬 Video\n' +
+    '4. 📁 Video (documento)\n\n' +
+    '_Toca un botón o responde 1-4_'
+
+  var buttons = [
+    {
+      name: 'quick_reply',
+      buttonParamsJson: JSON.stringify({
+        display_text: '🎵 Audio',
+        id: 'play_audio',
+      }),
+    },
+    {
+      name: 'quick_reply',
+      buttonParamsJson: JSON.stringify({
+        display_text: '📄 Audio Doc',
+        id: 'play_adoc',
+      }),
+    },
+    {
+      name: 'quick_reply',
+      buttonParamsJson: JSON.stringify({
+        display_text: '🎬 Video',
+        id: 'play_video',
+      }),
+    },
+    {
+      name: 'quick_reply',
+      buttonParamsJson: JSON.stringify({
+        display_text: '📁 Video Doc',
+        id: 'play_vdoc',
+      }),
+    },
+  ]
+
+  try {
+    await client.relayMessage(
+      m.chat,
+      {
+        interactiveMessage: {
+          body: { text: bodyText },
+          footer: { text: NEWSLETTER_NAME },
+          nativeFlowMessage: { buttons: buttons },
+          contextInfo: newsletterContext(),
+        },
+      },
+      {}
+    )
+    return true
+  } catch (e) {
+    console.log('[play] interactive falló, texto simple:', e.message)
+    await client.sendMessage(
+      m.chat,
+      { text: bodyText, contextInfo: newsletterContext() },
+      { quoted: m }
+    )
+    return false
+  }
+}
+
 export default {
   command: [
     'play',
@@ -318,8 +458,12 @@ export default {
         return client.reply(m.chat, '✐ Ingresa un nombre o URL de YouTube.', m)
       }
 
-      var isAudio = ['play', 'mp3', 'playaudio', 'ytmp3'].indexOf(command) !== -1
-      var asDocument = ['mp4doc', 'playdoc', 'ytmp4'].indexOf(command) !== -1
+      // Comandos directos (no preguntan)
+      var directAudio = ['mp3', 'playaudio', 'ytmp3'].indexOf(command) !== -1
+      var directVideo = ['mp4', 'playvideo', 'ytmp4'].indexOf(command) !== -1
+      var directAudioDoc = command === 'playdoc'
+      var directVideoDoc = command === 'mp4doc'
+      var needsChoice = ['play', 'play2'].indexOf(command) !== -1
 
       var url
       var title
@@ -348,6 +492,34 @@ export default {
       url = abs(url) || url
       if (!url || !/^https?:\/\//i.test(url)) {
         return m.reply('✘ No pude obtener una URL válida de YouTube.')
+      }
+
+      var isAudio = false
+      var asDocument = false
+
+      if (needsChoice) {
+        await sendFormatButtons(client, m, title)
+        var choice = await waitForFormat(client, m, 60000)
+        if (!choice) {
+          return m.reply('⌛ Se acabó el tiempo. Vuelve a usar el comando.')
+        }
+        isAudio = choice.isAudio
+        asDocument = choice.asDocument
+      } else if (directAudio) {
+        isAudio = true
+        asDocument = false
+      } else if (directAudioDoc) {
+        isAudio = true
+        asDocument = true
+      } else if (directVideo) {
+        isAudio = false
+        asDocument = false
+      } else if (directVideoDoc) {
+        isAudio = false
+        asDocument = true
+      } else {
+        isAudio = true
+        asDocument = false
       }
 
       await sendResult({
