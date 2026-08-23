@@ -16,9 +16,6 @@ const HEADERS = {
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
 }
 
-if (!global.__playSessions) global.__playSessions = {}
-if (!global.__playListenerBound) global.__playListenerBound = false
-
 function isYTUrl(u) {
   return /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|shorts\/|live\/)|youtu\.be\/)/i.test(u || '')
 }
@@ -66,24 +63,6 @@ function formatDuration(sec) {
   var m = Math.floor(n / 60)
   var s = Math.floor(n % 60)
   return m + ':' + (s < 10 ? '0' : '') + s
-}
-
-function phoneOf(jid) {
-  if (!jid) return ''
-  return String(jid).split('@')[0].replace(/\D/g, '')
-}
-
-function sameUser(a, b) {
-  if (!a || !b) return false
-  if (a === b) return true
-  var pa = phoneOf(a)
-  var pb = phoneOf(b)
-  if (!pa || !pb) return false
-  return pa === pb || pa.endsWith(pb) || pb.endsWith(pa)
-}
-
-function sessionKey(chat, sender) {
-  return String(chat) + '|' + phoneOf(sender)
 }
 
 async function callNyxDL(endpoint, ytUrl) {
@@ -171,7 +150,7 @@ async function getThumbBuffer(videoInfo) {
   }
 }
 
-function buildInfoText(title, videoInfo) {
+function buildInfoText(title, videoInfo, isAudio, asDocument) {
   var lines = ['✿ *' + (title || 'YouTube') + '*', '']
   var dur = videoInfo && (videoInfo.timestamp || videoInfo.duration)
   if (dur) lines.push('⌗» Duración › ' + formatDuration(dur))
@@ -182,15 +161,16 @@ function buildInfoText(title, videoInfo) {
     lines.push('⌗» Canal › ' + videoInfo.author.name)
   }
   if (videoInfo && videoInfo.ago) lines.push('⌗» Publicado › ' + videoInfo.ago)
-  if (videoInfo && videoInfo.url) lines.push('⌗» Link › ' + videoInfo.url)
   lines.push('')
-  lines.push('Elige el formato:')
-  lines.push('1. 🎵 Audio')
-  lines.push('2. 📄 Audio (documento)')
-  lines.push('3. 🎬 Video')
-  lines.push('4. 📁 Video (documento)')
-  lines.push('')
-  lines.push('_Toca un botón o responde 1-4_')
+  lines.push(
+    isAudio
+      ? asDocument
+        ? '✐ Enviando audio (documento)...'
+        : '✐ Enviando audio...'
+      : asDocument
+        ? '✐ Enviando video (documento)...'
+        : '✐ Enviando video...'
+  )
   return lines.join('\n')
 }
 
@@ -284,210 +264,6 @@ async function sendMediaOnly(opts) {
   }
 }
 
-function mapId(id) {
-  id = String(id || '').trim()
-  if (id === 'play_audio') return { isAudio: true, asDocument: false }
-  if (id === 'play_adoc') return { isAudio: true, asDocument: true }
-  if (id === 'play_video') return { isAudio: false, asDocument: false }
-  if (id === 'play_vdoc') return { isAudio: false, asDocument: true }
-  return null
-}
-
-function parseChoice(msg) {
-  try {
-    var ir = msg.message && msg.message.interactiveResponseMessage
-    if (ir && ir.nativeFlowResponseMessage && ir.nativeFlowResponseMessage.paramsJson) {
-      var raw = ir.nativeFlowResponseMessage.paramsJson
-      var parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
-      if (parsed && parsed.id) {
-        var c = mapId(parsed.id)
-        if (c) return c
-      }
-    }
-  } catch (e) {}
-
-  try {
-    var br = msg.message && msg.message.buttonsResponseMessage
-    if (br && br.selectedButtonId) {
-      var c2 = mapId(br.selectedButtonId)
-      if (c2) return c2
-    }
-  } catch (e) {}
-
-  try {
-    var tpl = msg.message && msg.message.templateButtonReplyMessage
-    if (tpl && tpl.selectedId) {
-      var c3 = mapId(tpl.selectedId)
-      if (c3) return c3
-    }
-  } catch (e) {}
-
-  try {
-    var lr = msg.message && msg.message.listResponseMessage
-    if (lr && lr.singleSelectReply && lr.singleSelectReply.selectedRowId) {
-      var c4 = mapId(lr.singleSelectReply.selectedRowId)
-      if (c4) return c4
-    }
-  } catch (e) {}
-
-  var text =
-    (msg.message &&
-      (msg.message.conversation ||
-        (msg.message.extendedTextMessage && msg.message.extendedTextMessage.text))) ||
-    ''
-  text = String(text).trim()
-
-  if (text === '1' || /audio$/i.test(text) && !/doc/i.test(text)) {
-    if (text === '1' || text.indexOf('🎵') !== -1 || /^audio$/i.test(text)) {
-      return { isAudio: true, asDocument: false }
-    }
-  }
-  if (text === '2' || /audio\s*doc/i.test(text) || text.indexOf('📄') !== -1) {
-    return { isAudio: true, asDocument: true }
-  }
-  if (text === '3' || (/video/i.test(text) && !/doc/i.test(text)) || text.indexOf('🎬') !== -1) {
-    if (text === '3' || /^🎬?\s*video$/i.test(text)) {
-      return { isAudio: false, asDocument: false }
-    }
-  }
-  if (text === '4' || /video\s*doc/i.test(text) || text.indexOf('📁') !== -1) {
-    return { isAudio: false, asDocument: true }
-  }
-
-  if (text === '1') return { isAudio: true, asDocument: false }
-  if (text === '2') return { isAudio: true, asDocument: true }
-  if (text === '3') return { isAudio: false, asDocument: false }
-  if (text === '4') return { isAudio: false, asDocument: true }
-
-  return null
-}
-
-function bindPlayListener(client) {
-  if (global.__playListenerBound) return
-  global.__playListenerBound = true
-
-  client.ev.on('messages.upsert', async function (ev) {
-    try {
-      var messages = ev.messages || []
-      for (var i = 0; i < messages.length; i++) {
-        var msg = messages[i]
-        if (!msg || !msg.message) continue
-        if (msg.key && msg.key.fromMe) continue
-
-        var chat = msg.key && msg.key.remoteJid
-        var sender = (msg.key && (msg.key.participant || msg.key.remoteJid)) || ''
-        if (!chat) continue
-
-        var choice = parseChoice(msg)
-        if (!choice) continue
-
-        var key = sessionKey(chat, sender)
-        var session = global.__playSessions[key]
-        if (!session) {
-          // buscar por chat si el sender no coincide exacto (LID)
-          var keys = Object.keys(global.__playSessions)
-          for (var k = 0; k < keys.length; k++) {
-            if (keys[k].indexOf(String(chat) + '|') === 0) {
-              var cand = global.__playSessions[keys[k]]
-              if (cand && sameUser(cand.sender, sender)) {
-                session = cand
-                key = keys[k]
-                break
-              }
-            }
-          }
-        }
-
-        if (!session || session.busy) continue
-
-        session.busy = true
-        delete global.__playSessions[key]
-
-        var mFake = session.m
-        var clientRef = session.client
-
-        try {
-          await clientRef.sendMessage(
-            chat,
-            {
-              text: choice.isAudio
-                ? choice.asDocument
-                  ? '✐ Descargando audio (documento)...'
-                  : '✐ Descargando audio...'
-                : choice.asDocument
-                  ? '✐ Descargando video (documento)...'
-                  : '✐ Descargando video...',
-              contextInfo: newsletterContext(),
-            },
-            { quoted: mFake }
-          )
-
-          await sendMediaOnly({
-            client: clientRef,
-            m: mFake,
-            url: session.url,
-            title: session.title,
-            isAudio: choice.isAudio,
-            asDocument: choice.asDocument,
-            thumbBuffer: session.thumbBuffer,
-          })
-        } catch (err) {
-          console.error('[play] session error:', err)
-          try {
-            await clientRef.sendMessage(chat, { text: '✘ Error: ' + err.message }, { quoted: mFake })
-          } catch (e2) {}
-        }
-      }
-    } catch (e) {
-      console.error('[play] listener:', e)
-    }
-  })
-}
-
-async function sendPreviewWithButtons(client, m, title, videoInfo, thumbBuffer) {
-  var infoText = buildInfoText(title, videoInfo)
-  var ctx = newsletterContext()
-
-  if (thumbBuffer) {
-    await client.sendMessage(
-      m.chat,
-      { image: thumbBuffer, caption: infoText, contextInfo: ctx },
-      { quoted: m }
-    )
-  } else {
-    await client.sendMessage(m.chat, { text: infoText, contextInfo: ctx }, { quoted: m })
-  }
-
-  var buttons = [
-    { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '🎵 Audio', id: 'play_audio' }) },
-    { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '📄 Audio Doc', id: 'play_adoc' }) },
-    { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '🎬 Video', id: 'play_video' }) },
-    { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '📁 Video Doc', id: 'play_vdoc' }) },
-  ]
-
-  try {
-    await client.relayMessage(
-      m.chat,
-      {
-        interactiveMessage: {
-          body: { text: 'Elige formato para:\n*' + (title || 'YouTube') + '*' },
-          footer: { text: NEWSLETTER_NAME },
-          nativeFlowMessage: { buttons: buttons },
-          contextInfo: ctx,
-        },
-      },
-      {}
-    )
-  } catch (e) {
-    console.log('[play] botones fallaron:', e.message)
-    await client.sendMessage(
-      m.chat,
-      { text: 'Responde con:\n1 = Audio\n2 = Audio Doc\n3 = Video\n4 = Video Doc', contextInfo: ctx },
-      { quoted: m }
-    )
-  }
-}
-
 export default {
   command: [
     'play', 'mp3', 'playaudio', 'playdoc', 'ytmp3', 'play2',
@@ -501,18 +277,13 @@ export default {
     var command = ctx.command
     var text = ctx.text
 
-    bindPlayListener(client)
-
     try {
       if (!text || !String(text).trim()) {
         return client.reply(m.chat, '✐ Ingresa un nombre o URL de YouTube.', m)
       }
 
-      var directAudio = ['mp3', 'playaudio', 'ytmp3'].indexOf(command) !== -1
-      var directVideo = ['mp4', 'playvideo', 'ytmp4'].indexOf(command) !== -1
-      var directAudioDoc = command === 'playdoc'
-      var directVideoDoc = command === 'mp4doc'
-      var needsChoice = ['play', 'play2'].indexOf(command) !== -1
+      var isAudio = ['play', 'mp3', 'playaudio', 'ytmp3', 'playdoc', 'play2'].indexOf(command) !== -1
+      var asDocument = ['playdoc', 'mp4doc'].indexOf(command) !== -1
 
       var url
       var title
@@ -544,42 +315,18 @@ export default {
       }
 
       var thumbBuffer = await getThumbBuffer(videoInfo)
+      var infoText = buildInfoText(title, videoInfo, isAudio, asDocument)
+      var ctx2 = newsletterContext()
 
-      if (needsChoice) {
-        var key = sessionKey(m.chat, m.sender)
-        global.__playSessions[key] = {
-          client: client,
-          m: m,
-          sender: m.sender,
-          chat: m.chat,
-          url: url,
-          title: title,
-          thumbBuffer: thumbBuffer,
-          busy: false,
-          at: Date.now(),
-        }
-
-        await sendPreviewWithButtons(client, m, title, videoInfo, thumbBuffer)
-        return
+      if (thumbBuffer) {
+        await client.sendMessage(
+          m.chat,
+          { image: thumbBuffer, caption: infoText, contextInfo: ctx2 },
+          { quoted: m }
+        )
+      } else {
+        await client.sendMessage(m.chat, { text: infoText, contextInfo: ctx2 }, { quoted: m })
       }
-
-      var isAudio = directAudio || directAudioDoc
-      var asDocument = directAudioDoc || directVideoDoc
-
-      await client.sendMessage(
-        m.chat,
-        {
-          text: isAudio
-            ? asDocument
-              ? '✐ Descargando audio (documento)...'
-              : '✐ Descargando audio...'
-            : asDocument
-              ? '✐ Descargando video (documento)...'
-              : '✐ Descargando video...',
-          contextInfo: newsletterContext(),
-        },
-        { quoted: m }
-      )
 
       await sendMediaOnly({
         client: client,
