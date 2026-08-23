@@ -6,7 +6,7 @@ export default {
   run: async ({client, m}) => {
     try {
 
-      const number = '5216242255295'
+      const number = '12602764655'
       const jid = number + '@s.whatsapp.net'
 
       const contact = {
