@@ -40,7 +40,7 @@ export default {
 
       const colombianTime = new Date(
         now.toLocaleString('en-US', {
-          timeZone: 'America/Bogota',
+          timeZone: 'America/Bogota'
         })
       )
 
@@ -48,7 +48,7 @@ export default {
         .toLocaleDateString('en-GB', {
           day: '2-digit',
           month: 'short',
-          year: 'numeric',
+          year: 'numeric'
         })
         .replace(/,/g, '')
 
@@ -90,19 +90,21 @@ export default {
 
       let menu = `\n`
 
-      // ───────────── PRESENTACIÓN
-      menu += `꒰ 𝙉𝙞𝙣𝙤 𝙒𝙖𝙗𝙤𝙩 ꒱\n`
-      menu += `૮꒰˶• ༝ •˶꒱ა  ${ucapan}, ${m.pushName || 'Sin nombre'}\n\n`
+      // PRESENTACIÓN
+      menu += `𐙚 𝙉𝙞𝙣𝙤 𝙒𝙖𝙗𝙤𝙩\n`
+      menu += `Danielrxz · menú principal ૮꒰˶ฅ́˘ฅ̀˶꒱ა\n\n`
 
-      // ───────────── INFORMACIÓN
-      menu += `୨୧﹒𝙄𝙣𝙛𝙤\n`
+      // INFORMACIÓN
+      menu += `⌗ 𝙄𝙣𝙛𝙤\n`
+      menu += `⌞ ${ownerLabel} › ${ownerDisplay}\n`
+      menu += `⌞ Versión › 3.1.9\n`
+      menu += `⌞ Plugins › ${plugins}\n`
+      menu += `⌞ Usuarios › ${Object.keys(users).length.toLocaleString()}\n`
+      menu += `⌞ Fecha › ${tiempo}, ${tiempo2}\n`
+      menu += `⌞ Link › ${link}\n\n`
 
-      menu += `⌁ Creador › ${ownerDisplay}\n`
-      menu += `⌁ Plugins › ${plugins}\n`
-      menu += `⌁ Versión › 3.1.9\n`
-      menu += `⌁ Link › ${link}\n`
-      menu += `⌁ Fecha › ${tiempo}, ${tiempo2}\n`
-      menu += `⌁ Usuarios › ${Object.keys(users).length.toLocaleString()}\n\n`
+      menu += `꒰ა 𝘽𝙞𝙚𝙣𝙫𝙚𝙣𝙞𝙙𝙤 ໒꒱\n`
+      menu += `╰  ${ucapan}, ${m.pushName || 'Sin nombre'}\n\n`
 
       const categoryArg = args[0]?.toLowerCase()
       const categories = {}
@@ -119,10 +121,10 @@ export default {
 
       if (categoryArg && !categories[categoryArg]) {
         return m.reply(
-          `୨୧﹒La categoría *${categoryArg}* no fue encontrada.\n\n` +
-          `꒰ঌ Categorías disponibles ໒꒱\n` +
+          `𐙚 La categoría *${categoryArg}* no fue encontrada.\n\n` +
+          `⌗ Categorías disponibles\n` +
           `${Object.keys(categories)
-            .map(c => `⌁ ${c}`)
+            .map(c => `⌞ ${c}`)
             .join('\n')}`
         )
       }
@@ -142,7 +144,9 @@ export default {
 
         const catName = titleCase(category)
 
-        menu += `꒰୨୧꒱ 𝙎𝙚𝙘𝙘𝙞𝙤́𝙣 ${catName}\n`
+        menu += `\n`
+        menu += `꒰ა ${catName} ໒꒱\n`
+        menu += `\n`
 
         cmds.forEach(cmd => {
           const aliases = (
@@ -160,21 +164,21 @@ export default {
             })
             .join(' ୨୧ ')
 
-          menu += `⌁ ${aliases}`
+          menu += `⌞ ${aliases}\n`
 
           if (cmd.uso) {
-            menu += ` 〔${cmd.uso}〕`
+            menu += `   𐙚 Uso › ${cmd.uso}\n`
           }
 
-          menu += `\n`
-
           if (cmd.desc) {
-            menu += `> ${cmd.desc}\n`
+            menu += `   > ${cmd.desc}\n`
           }
 
           menu += `\n`
         })
       }
+
+      menu += `꒰ა Gracias por usar Nino Wabot ໒꒱`
 
       const finalMenu = menu.trim()
 
@@ -191,7 +195,7 @@ export default {
               forwardedNewsletterMessageInfo: {
                 newsletterJid: canalId,
                 newsletterName: canalName,
-                serverMessageId: -1,
+                serverMessageId: -1
               }
             }
           },
@@ -209,8 +213,9 @@ export default {
 
     } catch (e) {
       console.log(e)
+
       return m.reply(
-        `꒰ঌ Ocurrió un error al generar el menú ໒꒱\n> ${e.message}`
+        `𐙚 Ocurrió un error al generar el menú.\n> ${e.message}`
       )
     }
   }
