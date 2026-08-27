@@ -33,12 +33,12 @@ export default {
       m.chat,
       {
         text:
-`✦ Jornada completada
+`ᰔᩚ Jornada completada
 
 ${pickRandom(trabajo)}
 
 ❀ Recompensa › *¥${rsl.toLocaleString()} ${monedas}*
-✧ Estado › Trabajo finalizado con éxito.
+⛁ Estado › Trabajo finalizado con éxito.
 
 ꒰୨୧꒱ Vuelve más tarde para seguir ganando dinero.`
       },
