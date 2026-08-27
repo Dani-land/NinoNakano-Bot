@@ -90,21 +90,19 @@ export default {
 
       let menu = `\n`
 
-      // PRESENTACIÓN
-      menu += `𐙚 𝙉𝙞𝙣𝙤 𝙒𝙖𝙗𝙤𝙩\n`
-      menu += `Danielrxz · menú principal ૮꒰˶ฅ́˘ฅ̀˶꒱ა\n\n`
+      menu += `꒰ 𝙉𝙞𝙣𝙤 𝙒𝙖𝙗𝙤𝙩 ꒱\n`
+      menu += `Danielrxz ᐧ ${ucapan}, ${m.pushName || 'Sin nombre'} ૮꒰˶ฅ́˘ฅ̀˶꒱ა\n\n`
 
-      // INFORMACIÓN
       menu += `⌗ 𝙄𝙣𝙛𝙤\n`
       menu += `⌞ ${ownerLabel} › ${ownerDisplay}\n`
-      menu += `⌞ Versión › 3.1.9\n`
+      menu += `⌞ Versión › ${3.1.9}\n`
       menu += `⌞ Plugins › ${plugins}\n`
       menu += `⌞ Usuarios › ${Object.keys(users).length.toLocaleString()}\n`
       menu += `⌞ Fecha › ${tiempo}, ${tiempo2}\n`
       menu += `⌞ Link › ${link}\n\n`
 
-      menu += `꒰ა 𝘽𝙞𝙚𝙣𝙫𝙚𝙣𝙞𝙙𝙤 ໒꒱\n`
-      menu += `╰  ${ucapan}, ${m.pushName || 'Sin nombre'}\n\n`
+      menu += `꒰ა 𝙈𝙚𝙣𝙪 𝙥𝙧𝙞𝙣𝙘𝙞𝙥𝙖𝙡 ໒꒱\n`
+      menu += `› Elige una categoría o usa directamente cualquier comando.\n`
 
       const categoryArg = args[0]?.toLowerCase()
       const categories = {}
@@ -121,7 +119,7 @@ export default {
 
       if (categoryArg && !categories[categoryArg]) {
         return m.reply(
-          `𐙚 La categoría *${categoryArg}* no fue encontrada.\n\n` +
+          `꒰ 𝙉𝙞𝙣𝙤 ꒱ La categoría *${categoryArg}* no existe.\n\n` +
           `⌗ Categorías disponibles\n` +
           `${Object.keys(categories)
             .map(c => `⌞ ${c}`)
@@ -145,8 +143,7 @@ export default {
         const catName = titleCase(category)
 
         menu += `\n`
-        menu += `꒰ა ${catName} ໒꒱\n`
-        menu += `\n`
+        menu += `*ֹ 𔘓᳹ ${catName} ୨୧*\n`
 
         cmds.forEach(cmd => {
           const aliases = (
@@ -162,23 +159,23 @@ export default {
 
               return `${prefix}${aliasClean}`
             })
-            .join(' ୨୧ ')
+            .join(' ᐧ ')
 
-          menu += `⌞ ${aliases}\n`
+          menu += `\n`
+          menu += `いᰱໍ࣭☆ׂ ${aliases}\n`
 
           if (cmd.uso) {
-            menu += `   𐙚 Uso › ${cmd.uso}\n`
+            menu += `> ${cmd.uso}\n`
           }
 
           if (cmd.desc) {
-            menu += `   > ${cmd.desc}\n`
+            menu += `> *${cmd.desc}*\n`
           }
-
-          menu += `\n`
         })
       }
 
-      menu += `꒰ა Gracias por usar Nino Wabot ໒꒱`
+      menu += `\n\n꒰ა 𝙏𝙝𝙖𝙣𝙠 𝙮𝙤𝙪 ໒꒱`
+      menu += `\n> Gracias por usar Nino Wabot ♡`
 
       const finalMenu = menu.trim()
 
@@ -215,7 +212,7 @@ export default {
       console.log(e)
 
       return m.reply(
-        `𐙚 Ocurrió un error al generar el menú.\n> ${e.message}`
+        `꒰ა Error ໒꒱\n> ${e.message}`
       )
     }
   }
