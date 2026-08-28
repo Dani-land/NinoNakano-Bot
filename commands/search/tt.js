@@ -1,45 +1,33 @@
 import axios from 'axios'
 
-const NYXDL_API_KEY = 'nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
-const NYXDL_BASE = 'https://nyxdlapi.vercel.app'
-const NYXDL_TT_SEARCH = 'https://nyxdlapi.vercel.app/api/search/tiktoksearch'
+const DVYER_API_KEY = 'dvyer2008'
+const DVYER_TT_SEARCH = 'https://dv-yer-api.online/tiktok/search'
 
 function formatCount(n) {
   var num = Number(n || 0)
-  if (Number.isNaN(num)) return '0'
+  if (Number.isNaN(num) || n == null) return '0'
   return num.toLocaleString()
 }
 
 function getTitle(v) {
-  var t = (v && v.title) || 'Sin descripción'
+  var t = (v && (v.title || v.description)) || 'Sin descripción'
   if (t.length > 80) return t.slice(0, 80) + '...'
   return t
 }
 
 function getAuthor(v) {
   if (!v) return 'desconocido'
-  if (v.author && typeof v.author === 'object') {
-    return v.author.username || v.author.name || 'desconocido'
-  }
   return v.username || v.author || 'desconocido'
 }
 
-function getStats(v) {
-  var s = (v && v.statistics) || {}
-  return {
-    likes: s.likes || v.likes || 0,
-    views: s.vistas || s.views || v.views || 0,
-  }
-}
-
-function toAbsolute(u) {
-  if (!u || typeof u !== 'string') return null
-  var s = u.trim()
-  if (!s) return null
-  if (/^https?:\/\//i.test(s)) return s
-  if (s.indexOf('//') === 0) return 'https:' + s
-  if (s.charAt(0) === '/') return NYXDL_BASE + s
-  return null
+function getVideoUrl(v) {
+  if (!v) return null
+  return (
+    v.download_url ||
+    v.stream_url ||
+    (v.links && (v.links.download || v.links.stream)) ||
+    null
+  )
 }
 
 export default {
@@ -59,14 +47,14 @@ export default {
 
     try {
       var searchUrl =
-        NYXDL_TT_SEARCH +
-        '?q=' +
-        encodeURIComponent(query) +
-        '&apikey=' +
-        encodeURIComponent(NYXDL_API_KEY)
+        DVYER_TT_SEARCH +
+        '?apikey=' +
+        encodeURIComponent(DVYER_API_KEY) +
+        '&q=' +
+        encodeURIComponent(query)
 
       var res = await axios.get(searchUrl, {
-        timeout: 30000,
+        timeout: 35000,
         headers: {
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -76,10 +64,15 @@ export default {
 
       var data = res.data
       var results =
-        (data && data.result && data.result.results) ||
-        (data && data.result && data.result.resultados) ||
         (data && data.results) ||
+        (data && data.result && data.result.results) ||
         []
+
+      if (!data || (data.ok !== true && data.status !== true)) {
+        if (!Array.isArray(results) || !results.length) {
+          return m.reply('✘ No encontré resultados para *' + query + '*')
+        }
+      }
 
       if (!Array.isArray(results) || !results.length) {
         return m.reply('✘ No encontré resultados para *' + query + '*')
@@ -87,14 +80,13 @@ export default {
 
       var usable = results
         .map(function (v) {
-          var stats = getStats(v)
           return {
-            url: toAbsolute(v.video || v.videoWatermarked),
+            url: getVideoUrl(v),
             title: getTitle(v),
             author: getAuthor(v),
-            likes: stats.likes,
-            views: stats.views,
-            link: v.url || null,
+            likes: v.likes,
+            views: v.views,
+            link: v.share_url || v.video_url || (v.links && v.links.tiktok) || null,
           }
         })
         .filter(function (v) {
@@ -120,13 +112,16 @@ export default {
           v.title +
           '\n' +
           '♡ @' +
-          v.author +
-          '\n' +
-          '♡ ' +
-          formatCount(v.likes) +
-          ' Likes  •  ▶ ' +
-          formatCount(v.views) +
-          ' Views'
+          v.author
+
+        if (v.likes != null || v.views != null) {
+          caption +=
+            '\n♡ ' +
+            formatCount(v.likes) +
+            ' Likes  •  ▶ ' +
+            formatCount(v.views) +
+            ' Views'
+        }
 
         return {
           video: { url: v.url },
@@ -148,13 +143,16 @@ export default {
             v.title +
             '\n' +
             '♡ @' +
-            v.author +
-            '\n' +
-            '♡ ' +
-            formatCount(v.likes) +
-            ' Likes  •  ▶ ' +
-            formatCount(v.views) +
-            ' Views'
+            v.author
+
+          if (v.likes != null || v.views != null) {
+            caption +=
+              '\n♡ ' +
+              formatCount(v.likes) +
+              ' Likes  •  ▶ ' +
+              formatCount(v.views) +
+              ' Views'
+          }
 
           try {
             await client.sendMessage(
