@@ -1,37 +1,41 @@
 import fetch from 'node-fetch'
 
-const NYX_API_URL = 'https://nyxdlapi.vercel.app/api/search/pinterest'
-const NYX_API_KEY = 'nyx_vDSYgjTlKOOLhz-_XmojwHjvH1_hp5c2'
+const DVYER_API_KEY = 'dvyer2008'
+const DVYER_PIN_SEARCH = 'https://dv-yer-api.online/pinterest/search'
 
 async function searchPinterest(query, limit) {
   const url =
-    NYX_API_URL +
+    DVYER_PIN_SEARCH +
     '?q=' +
     encodeURIComponent(query) +
     '&limit=' +
     encodeURIComponent(limit) +
     '&apikey=' +
-    encodeURIComponent(NYX_API_KEY)
+    encodeURIComponent(DVYER_API_KEY)
 
   const res = await fetch(url)
   const text = await res.text()
 
   if (!res.ok) {
-    throw new Error('NyxDLaPI HTTP ' + res.status + ': ' + text.slice(0, 200))
+    throw new Error('dv-yer HTTP ' + res.status + ': ' + text.slice(0, 200))
   }
 
   let json
   try {
     json = JSON.parse(text)
   } catch (e) {
-    throw new Error('Respuesta inválida de NyxDLaPI: ' + text.slice(0, 200))
+    throw new Error('Respuesta inválida de dv-yer: ' + text.slice(0, 200))
   }
 
-  if (!json || !json.status || !json.result || !json.result.results || !json.result.results.length) {
+  const results = (json && json.results) || []
+  if (!json || (json.ok !== true && !results.length)) {
     throw new Error((json && json.message) || 'No se encontraron resultados.')
   }
+  if (!results.length) {
+    throw new Error('No se encontraron resultados.')
+  }
 
-  return json.result.results
+  return results
 }
 
 async function downloadImage(url) {
@@ -39,7 +43,6 @@ async function downloadImage(url) {
     headers: {
       'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36',
-      Referer: 'https://www.pinterest.com/',
       Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
     },
   })
@@ -51,13 +54,7 @@ async function downloadImage(url) {
 
 function pickImage(v) {
   return (
-    v.image ||
-    v.img ||
-    v.url ||
-    v.thumbnail ||
-    v.imageUrl ||
-    v.image_url ||
-    v.original ||
+    (v && (v.download_url_full || v.download_url || v.url || v.direct_url)) ||
     null
   )
 }
@@ -116,7 +113,7 @@ export default {
 
         try {
           const buffer = await downloadImage(imgUrl)
-          let caption =
+          const caption =
             '✿ Pinterest Search\n\n' +
             '⌗» ' +
             (i + 1) +
@@ -138,7 +135,7 @@ export default {
 
       if (!albumItems.length) {
         return m.reply(
-          '✘ No se pudo descargar ninguna imagen. Revisa la API o las URLs de Pinterest.'
+          '✘ No se pudo descargar ninguna imagen. Revisa la API o las URLs.'
         )
       }
 
@@ -174,7 +171,9 @@ export default {
 
       if (omitidos > 0) {
         await m.reply(
-          '✓ Enviadas *' + albumItems.length + '* imágenes' +
+          '✓ Enviadas *' +
+            albumItems.length +
+            '* imágenes' +
             (omitidos ? ' (' + omitidos + ' omitidas)' : '') +
             '.'
         )
