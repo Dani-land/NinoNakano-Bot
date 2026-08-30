@@ -145,14 +145,14 @@ async function getThumbBuffer(videoInfo) {
 function buildInfoText(title, videoInfo, isAudio, asDocument) {
   var lines = ['✿ *' + (title || 'YouTube') + '*', '']
   var dur = videoInfo && (videoInfo.timestamp || videoInfo.duration)
-  if (dur) lines.push('⌗» Duración › ' + formatDuration(dur))
+  if (dur) lines.push('> ⌗» Duración › ' + formatDuration(dur))
   if (videoInfo && videoInfo.views != null) {
-    lines.push('⌗» Vistas › ' + Number(videoInfo.views).toLocaleString())
+    lines.push('> ⌗» Vistas › ' + Number(videoInfo.views).toLocaleString())
   }
   if (videoInfo && videoInfo.author && videoInfo.author.name) {
-    lines.push('⌗» Canal › ' + videoInfo.author.name)
+    lines.push('> ⌗» Canal › ' + videoInfo.author.name)
   }
-  if (videoInfo && videoInfo.ago) lines.push('⌗» Publicado › ' + videoInfo.ago)
+  if (videoInfo && videoInfo.ago) lines.push('> ⌗» Publicado › ' + videoInfo.ago)
   lines.push('')
   lines.push(
     isAudio
