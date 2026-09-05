@@ -39,7 +39,7 @@ export default {
       var owner = botSettings.owner || ''
       var canalId = botSettings.id || '120363420575743790@newsletter'
       var canalName = botSettings.nameid || 'ミ★ 𝙉𝙞𝙣𝙤 𝙐𝙥𝙙𝙖𝙩𝙚𝙨 ★彡'
-      var link = botSettings.link || 'Sin enlace'
+      var link = botSettings.link || ''
       var banner = botSettings.banner || null
 
       var desar = 'Oculto'
@@ -48,25 +48,19 @@ export default {
         desar = (userData && userData.genre) || 'Oculto'
       }
 
+      var tiempo = moment.tz('America/Bogota').format('DD/MM/YYYY')
+      var hora = moment.tz('America/Bogota').format('hh:mm A')
       var jam = moment.tz('America/Bogota').format('HH:mm:ss')
-      var tiempo = moment.tz('America/Bogota').format('DD MMM YYYY')
-      var tiempo2 = moment.tz('America/Bogota').format('hh:mm A')
       var plugins = cmdsList.length
 
-      var ucapan =
-        jam < '05:00:00'
-          ? 'Buenos días'
-          : jam < '12:00:00'
-            ? 'Buenos días'
-            : jam < '18:00:00'
-              ? 'Buenas tardes'
-              : 'Buenas noches'
+      var saludo =
+        jam < '12:00:00' ? 'Buenos días' : jam < '19:00:00' ? 'Buenas tardes' : 'Buenas noches'
 
       var ownerDisplay = owner
         ? !isNaN(owner.replace(/@s\.whatsapp\.net$/, ''))
           ? '@' + owner.split('@')[0]
           : owner
-        : 'Oculto por privacidad'
+        : 'Privado'
 
       var ownerLabel =
         desar === 'Hombre' ? 'Creador' : desar === 'Mujer' ? 'Creadora' : 'Creador(a)'
@@ -77,23 +71,20 @@ export default {
       var name = m.pushName || 'Usuario'
 
       var menu = ''
-      menu += '🌸 𓆩ꨄ︎𓆪 *Bienvenid@* 𓆩ꨄ︎𓆪 🌸\n'
-      menu += 'Soy *Nino Nakano Wabot*\n\n'
-      menu += ucapan + ', *' + name + '* ❤️‍🩹\n\n'
+      menu += '╭━━━〔 *NINO NAKANO* 〕━━━╮\n'
+      menu += '┃  ' + saludo + ', *' + name + '*\n'
+      menu += '┃  Bot listo · menú de comandos\n'
+      menu += '╰━━━━━━━━━━━━━━━━━━━━━━╯\n\n'
 
-      menu += '┆ ᴄᴀɴᴀʟ ᴅᴇ ᴀᴄᴛᴜᴀʟɪᴢᴀᴄɪᴏɴᴇꜱ\n'
-      menu += '┆ ⋆. 𐙚˚࿔ ' + canalName + '\n'
-      if (link && link !== 'Sin enlace') {
-        menu += '┆ ⋆. 𐙚˚࿔ ' + link + '\n'
-      }
+      menu += '＊ *Info*\n'
+      menu += '› ' + ownerLabel + '  »  ' + ownerDisplay + '\n'
+      menu += '› Plugins   »  ' + plugins + '\n'
+      menu += '› Versión   »  3.1.9\n'
+      menu += '› Fecha     »  ' + tiempo + ' · ' + hora + '\n'
+      menu += '› Users     »  ' + Object.keys(users).length.toLocaleString() + '\n'
+      if (canalName) menu += '› Canal     »  ' + canalName + '\n'
+      if (link) menu += '› Link      »  ' + link + '\n'
       menu += '\n'
-
-      menu += '✧ 𝐈𝐧𝐟𝐨 𝐝𝐞𝐥 𝐛𝐨𝐭 ✧\n\n'
-      menu += '⌗» ' + ownerLabel + ' › ' + ownerDisplay + '\n'
-      menu += '⌗» Plugins › ' + plugins + '\n'
-      menu += '⌗» Versión › 3.1.9\n'
-      menu += '⌗» Fecha › ' + tiempo + ' · ' + tiempo2 + '\n'
-      menu += '⌗» Users › ' + Object.keys(users).length.toLocaleString() + '\n'
 
       var categories = {}
       for (var i = 0; i < cmdsList.length; i++) {
@@ -107,10 +98,9 @@ export default {
 
       if (categoryArg && !categories[categoryArg]) {
         return m.reply(
-          '✘ La categoría *' +
+          '✘ Categoría *' +
             categoryArg +
-            '* no existe.\n\n' +
-            'ꕥ Categorías disponibles:\n' +
+            '* no encontrada.\n\nDisponibles:\n' +
             Object.keys(categories)
               .map(function (c) {
                 return '• ' + c
@@ -126,11 +116,9 @@ export default {
         if (categoryArg && cat.toLowerCase() !== categoryArg) continue
 
         var cmds = categories[cat]
-        var catName = titleCase(cat)
 
-        menu += '\n──────────── ❀\n\n'
-        menu += '✧ 𝐀𝐪𝐮𝐢 𝐭𝐢𝐞𝐧𝐞𝐬 𝐥𝐚 𝐥𝐢𝐬𝐭𝐚 𝐝𝐞 𝐜𝐨𝐦𝐚𝐧𝐝𝐨𝐬 𝐝𝐞 *' + catName + '* ✧\n\n'
-        menu += '> 🜸 Comandos de *' + cat + '* listos para usar. ฅ^•ﻌ•^ฅ\n\n'
+        menu += '┏━ *' + titleCase(cat).toUpperCase() + '*\n'
+        menu += '┃\n'
 
         for (var j = 0; j < cmds.length; j++) {
           var cmd = cmds[j]
@@ -140,29 +128,33 @@ export default {
               ? cmd.command
               : []
 
-          var aliasText = rawAliases
+          var main = rawAliases[0] ? cleanAlias(rawAliases[0]) : null
+          if (!main) continue
+
+          var extra = rawAliases
+            .slice(1, 4)
             .map(function (a) {
-              return '`' + prefix + cleanAlias(a) + '`'
+              return cleanAlias(a)
             })
             .filter(Boolean)
-            .join(' ⋆ ')
 
-          if (!aliasText) continue
+          var line = '┃  ' + prefix + main
+          if (extra.length) line += '  ·  ' + extra.join(' · ')
+          if (cmd.uso) line += '  ' + cmd.uso
 
-          menu += '❖ ' + aliasText
-          if (cmd.uso) menu += ' + _' + cmd.uso + '_'
-          menu += '\n'
+          menu += line + '\n'
 
           if (cmd.desc) {
-            menu += '> ╰➤ ' + cmd.desc + '\n'
+            menu += '┃     ↳ ' + cmd.desc + '\n'
           }
-          menu += '\n'
         }
+
+        menu += '┃\n'
+        menu += '┗━━━━━━━━━━━━\n\n'
       }
 
-      menu += '──────────── ❀\n\n'
-      menu += '> Más comandos pronto ʕ•ᴥ•ʔ\n'
-      menu += '> Usa *' + prefix + 'menu <categoría>* para filtrar'
+      menu += '_Filtra con_ *' + prefix + 'menu <categoría>*\n'
+      menu += '_Ej:_ *' + prefix + 'menu downloader*'
 
       var ctxInfo = {
         mentionedJid: owner ? [owner] : [],
