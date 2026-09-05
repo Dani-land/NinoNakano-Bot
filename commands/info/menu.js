@@ -1,135 +1,178 @@
 import moment from 'moment-timezone'
 import { commands } from '../../lib/commands.js'
 
-function titleCase(text = '') {
+function titleCase(text) {
+  text = text || ''
   return String(text)
     .toLowerCase()
-    .replace(/(^|\s)\S/g, s => s.toUpperCase())
+    .replace(/(^|\s)\S/g, function (s) {
+      return s.toUpperCase()
+    })
+}
+
+function cleanAlias(a) {
+  return String(a || '')
+    .split(/[\/#!+.\-]+/)
+    .pop()
+    .toLowerCase()
 }
 
 export default {
-  command: ['menu', 'help'],
+  command: ['menu', 'help', 'comandos', 'menucompleto'],
   category: 'info',
 
-  run: async ({ client, m, args = [], usedPrefix = '.' }) => {
+  run: async function (ctx) {
+    var client = ctx.client
+    var m = ctx.m
+    var args = ctx.args || []
+    var usedPrefix = ctx.usedPrefix || '.'
+
     try {
-      const cmdsList = Array.isArray(commands) ? commands : []
-      const users = global.db?.data?.users || {}
-      const settings = global.db?.data?.settings || {}
+      var cmdsList = Array.isArray(commands) ? commands : []
+      var users = (global.db && global.db.data && global.db.data.users) || {}
+      var settings = (global.db && global.db.data && global.db.data.settings) || {}
 
-      const botId = ((client.user?.id || '').split(':')[0] || '') + '@s.whatsapp.net'
-      const botSettings = settings[botId] || {}
+      var botId = ((client.user && client.user.id) || '').split(':')[0] || ''
+      botId = botId + '@s.whatsapp.net'
+      var botSettings = settings[botId] || {}
 
-      const owner = botSettings.owner || ''
-      const canalId = botSettings.id || ''
-      const canalName = botSettings.nameid || ''
-      const link = botSettings.link || 'Sin enlace'
-      const banner = botSettings.banner || null
+      var owner = botSettings.owner || ''
+      var canalId = botSettings.id || '120363420575743790@newsletter'
+      var canalName = botSettings.nameid || 'ミ★ 𝙉𝙞𝙣𝙤 𝙐𝙥𝙙𝙖𝙩𝙚𝙨 ★彡'
+      var link = botSettings.link || 'Sin enlace'
+      var banner = botSettings.banner || null
 
-      let desar = 'Oculto'
+      var desar = 'Oculto'
       if (owner && !isNaN(owner.replace(/@s\.whatsapp\.net$/, ''))) {
-        const userData = users[owner]
-        desar = userData?.genre || 'Oculto'
+        var userData = users[owner]
+        desar = (userData && userData.genre) || 'Oculto'
       }
 
-      const now = new Date()
-      const colombianTime = new Date(
-        now.toLocaleString('en-US', { timeZone: 'America/Bogota' })
-      )
+      var jam = moment.tz('America/Bogota').format('HH:mm:ss')
+      var tiempo = moment.tz('America/Bogota').format('DD MMM YYYY')
+      var tiempo2 = moment.tz('America/Bogota').format('hh:mm A')
+      var plugins = cmdsList.length
 
-      const tiempo = colombianTime
-        .toLocaleDateString('en-GB', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-        })
-        .replace(/,/g, '')
-
-      const tiempo2 = moment.tz('America/Bogota').format('hh:mm A')
-      const jam = moment.tz('America/Bogota').format('HH:mm:ss')
-      const plugins = cmdsList.length
-
-      const ucapan =
+      var ucapan =
         jam < '05:00:00'
-          ? 'Buen día'
-          : jam < '11:00:00'
-          ? 'Buen día'
-          : jam < '15:00:00'
-          ? 'Buenas tardes'
-          : jam < '18:00:00'
-          ? 'Buenas tardes'
-          : 'Buenas noches'
+          ? 'Buenos días'
+          : jam < '12:00:00'
+            ? 'Buenos días'
+            : jam < '18:00:00'
+              ? 'Buenas tardes'
+              : 'Buenas noches'
 
-      const ownerDisplay = owner
-        ? (!isNaN(owner.replace(/@s\.whatsapp\.net$/, ''))
-          ? `@${owner.split('@')[0]}`
-          : owner)
+      var ownerDisplay = owner
+        ? !isNaN(owner.replace(/@s\.whatsapp\.net$/, ''))
+          ? '@' + owner.split('@')[0]
+          : owner
         : 'Oculto por privacidad'
 
-      const ownerLabel =
-        desar === 'Hombre'
-          ? 'Creador'
-          : desar === 'Mujer'
-          ? 'Creadora'
-          : 'Creador(a)'
+      var ownerLabel =
+        desar === 'Hombre' ? 'Creador' : desar === 'Mujer' ? 'Creadora' : 'Creador(a)'
 
-      let menu = `\n`
-      menu += `✿ Nino Nakano Wabot ✿\n\n`
-      menu += `${ucapan}, *${m.pushName ? m.pushName : 'Sin nombre'}*\n\n`
+      var prefix =
+        typeof usedPrefix === 'string' && usedPrefix.length ? usedPrefix : '.'
 
-      menu += `⌗» ${ownerLabel} ›⠀${ownerDisplay}\n`
-      menu += `⌗» Plugins ›⠀⠀⠀${plugins}\n`
-      menu += `⌗» Versión ›⠀⠀${'3.1.9'}\n`
-      menu += `⌗» Link ›⠀⠀⠀⠀⠀${link}\n`
-      menu += `⌗» Fecha ›⠀⠀⠀${tiempo}, ${tiempo2}\n`
-      menu += `⌗» Users ›⠀⠀⠀${Object.keys(users).length.toLocaleString()}\n`
+      var name = m.pushName || 'Usuario'
 
-      const categoryArg = args[0]?.toLowerCase()
-      const categories = {}
+      var menu = ''
+      menu += '🌸 𓆩ꨄ︎𓆪 *Bienvenid@* 𓆩ꨄ︎𓆪 🌸\n'
+      menu += 'Soy *Nino Nakano Wabot*\n\n'
+      menu += ucapan + ', *' + name + '* ❤️‍🩹\n\n'
 
-      for (const command of cmdsList) {
-        const category = command.category || 'otros'
+      menu += '┆ ᴄᴀɴᴀʟ ᴅᴇ ᴀᴄᴛᴜᴀʟɪᴢᴀᴄɪᴏɴᴇꜱ\n'
+      menu += '┆ ⋆. 𐙚˚࿔ ' + canalName + '\n'
+      if (link && link !== 'Sin enlace') {
+        menu += '┆ ⋆. 𐙚˚࿔ ' + link + '\n'
+      }
+      menu += '\n'
+
+      menu += '✧ 𝐈𝐧𝐟𝐨 𝐝𝐞𝐥 𝐛𝐨𝐭 ✧\n\n'
+      menu += '⌗» ' + ownerLabel + ' › ' + ownerDisplay + '\n'
+      menu += '⌗» Plugins › ' + plugins + '\n'
+      menu += '⌗» Versión › 3.1.9\n'
+      menu += '⌗» Fecha › ' + tiempo + ' · ' + tiempo2 + '\n'
+      menu += '⌗» Users › ' + Object.keys(users).length.toLocaleString() + '\n'
+
+      var categories = {}
+      for (var i = 0; i < cmdsList.length; i++) {
+        var command = cmdsList[i]
+        var category = command.category || 'otros'
         if (!categories[category]) categories[category] = []
         categories[category].push(command)
       }
 
+      var categoryArg = args[0] ? String(args[0]).toLowerCase() : ''
+
       if (categoryArg && !categories[categoryArg]) {
         return m.reply(
-          `✘ La categoría *${categoryArg}* no fue encontrada.\n\n` +
-          `ꕥ Categorías disponibles:\n` +
-          `${Object.keys(categories).map(c => `• ${c}`).join('\n')}`
+          '✘ La categoría *' +
+            categoryArg +
+            '* no existe.\n\n' +
+            'ꕥ Categorías disponibles:\n' +
+            Object.keys(categories)
+              .map(function (c) {
+                return '• ' + c
+              })
+              .join('\n')
         )
       }
 
-      const prefix = typeof usedPrefix === 'string' && usedPrefix.length ? usedPrefix : '.'
+      var catKeys = Object.keys(categories).sort()
 
-      for (const [category, cmds] of Object.entries(categories)) {
-        if (categoryArg && category.toLowerCase() !== categoryArg) continue
+      for (var c = 0; c < catKeys.length; c++) {
+        var cat = catKeys[c]
+        if (categoryArg && cat.toLowerCase() !== categoryArg) continue
 
-        const catName = titleCase(category)
+        var cmds = categories[cat]
+        var catName = titleCase(cat)
 
-        menu += `\n❀ ${catName}\n\n`
+        menu += '\n──────────── ❀\n\n'
+        menu += '✧ 𝐀𝐪𝐮𝐢 𝐭𝐢𝐞𝐧𝐞𝐬 𝐥𝐚 𝐥𝐢𝐬𝐭𝐚 𝐝𝐞 𝐜𝐨𝐦𝐚𝐧𝐝𝐨𝐬 𝐝𝐞 *' + catName + '* ✧\n\n'
+        menu += '> 🜸 Comandos de *' + cat + '* listos para usar. ฅ^•ﻌ•^ฅ\n\n'
 
-        cmds.forEach(cmd => {
-          const aliases = (Array.isArray(cmd.alias) ? cmd.alias : cmd.command || [])
-            .map(a => {
-              const aliasClean = String(a)
-                .split(/[\/#!+.\-]+/)
-                .pop()
-                .toLowerCase()
+        for (var j = 0; j < cmds.length; j++) {
+          var cmd = cmds[j]
+          var rawAliases = Array.isArray(cmd.alias)
+            ? cmd.alias
+            : Array.isArray(cmd.command)
+              ? cmd.command
+              : []
 
-              return `${prefix}${aliasClean}`
+          var aliasText = rawAliases
+            .map(function (a) {
+              return '`' + prefix + cleanAlias(a) + '`'
             })
-            .join(' › ')
+            .filter(Boolean)
+            .join(' ⋆ ')
 
-          menu += `꒰୨୧꒱ *${aliases}* ${cmd.uso ? `+ ${cmd.uso}` : ''}\n`
+          if (!aliasText) continue
+
+          menu += '❖ ' + aliasText
+          if (cmd.uso) menu += ' + _' + cmd.uso + '_'
+          menu += '\n'
 
           if (cmd.desc) {
-            menu += `   ${cmd.desc}\n`
+            menu += '> ╰➤ ' + cmd.desc + '\n'
           }
+          menu += '\n'
+        }
+      }
 
-          menu += `\n`
-        })
+      menu += '──────────── ❀\n\n'
+      menu += '> Más comandos pronto ʕ•ᴥ•ʔ\n'
+      menu += '> Usa *' + prefix + 'menu <categoría>* para filtrar'
+
+      var ctxInfo = {
+        mentionedJid: owner ? [owner] : [],
+        forwardingScore: 999,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: canalId,
+          newsletterName: canalName,
+          serverMessageId: -1,
+        },
       }
 
       if (banner) {
@@ -138,29 +181,23 @@ export default {
           {
             image: { url: banner },
             caption: menu.trim(),
-            contextInfo: {
-              mentionedJid: owner ? [owner] : [],
-              forwardingScore: 999,
-              isForwarded: true,
-              forwardedNewsletterMessageInfo: {
-                newsletterJid: canalId,
-                newsletterName: canalName,
-                serverMessageId: -1,
-              }
-            }
+            contextInfo: ctxInfo,
           },
           { quoted: m }
         )
       } else {
         await client.sendMessage(
           m.chat,
-          { text: menu.trim() },
+          {
+            text: menu.trim(),
+            contextInfo: ctxInfo,
+          },
           { quoted: m }
         )
       }
     } catch (e) {
       console.log(e)
-      return m.reply(`✘ Error al generar el menú.\n> ${e.message}`)
+      return m.reply('✘ Error al generar el menú.\n> ' + e.message)
     }
-  }
+  },
 }
