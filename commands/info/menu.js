@@ -48,7 +48,7 @@ export default {
         desar = (userData && userData.genre) || 'Oculto'
       }
 
-      var tiempo = moment.tz('America/Bogota').format('DD/MM/YYYY')
+      var tiempo = moment.tz('America/Bogota').format('DD MMM YYYY')
       var hora = moment.tz('America/Bogota').format('hh:mm A')
       var jam = moment.tz('America/Bogota').format('HH:mm:ss')
       var plugins = cmdsList.length
@@ -71,19 +71,18 @@ export default {
       var name = m.pushName || 'Usuario'
 
       var menu = ''
-      menu += '╭━━━〔 *NINO NAKANO* 〕━━━╮\n'
-      menu += '┃  ' + saludo + ', *' + name + '*\n'
-      menu += '┃  Bot listo · menú de comandos\n'
-      menu += '╰━━━━━━━━━━━━━━━━━━━━━━╯\n\n'
+      menu += '𓆩ꨄ︎𓆪  *Nino Nakano Wabot*  𓆩ꨄ︎𓆪\n\n'
+      menu += saludo + ', *' + name + '*\n'
+      menu += 'Aquí tienes el menú completo 🐢\n\n'
 
-      menu += '＊ *Info*\n'
-      menu += '› ' + ownerLabel + '  »  ' + ownerDisplay + '\n'
-      menu += '› Plugins   »  ' + plugins + '\n'
-      menu += '› Versión   »  3.1.9\n'
-      menu += '› Fecha     »  ' + tiempo + ' · ' + hora + '\n'
-      menu += '› Users     »  ' + Object.keys(users).length.toLocaleString() + '\n'
-      if (canalName) menu += '› Canal     »  ' + canalName + '\n'
-      if (link) menu += '› Link      »  ' + link + '\n'
+      menu += '‧₊˚ ɪɴғᴏ ᴅᴇʟ ʙᴏᴛ\n'
+      menu += '  ⟡  ' + ownerLabel + '  ·  ' + ownerDisplay + '\n'
+      menu += '  ⟡  Plugins  ·  ' + plugins + '\n'
+      menu += '  ⟡  Versión  ·  3.1.9\n'
+      menu += '  ⟡  Fecha  ·  ' + tiempo + ' · ' + hora + '\n'
+      menu += '  ⟡  Users  ·  ' + Object.keys(users).length.toLocaleString() + '\n'
+      if (canalName) menu += '  ⟡  Canal  ·  ' + canalName + '\n'
+      if (link) menu += '  ⟡  Link  ·  ' + link + '\n'
       menu += '\n'
 
       var categories = {}
@@ -110,15 +109,18 @@ export default {
       }
 
       var catKeys = Object.keys(categories).sort()
+      var marks = ['✦', '✧', '✶', '✧', '⋆']
 
       for (var c = 0; c < catKeys.length; c++) {
         var cat = catKeys[c]
         if (categoryArg && cat.toLowerCase() !== categoryArg) continue
 
         var cmds = categories[cat]
+        var mark = marks[c % marks.length]
 
-        menu += '┏━ *' + titleCase(cat).toUpperCase() + '*\n'
-        menu += '┃\n'
+        menu += '———————— ✦ ————————\n\n'
+        menu += mark + '  *' + titleCase(cat) + '*\n'
+        menu += '   comandos de esta sección\n\n'
 
         for (var j = 0; j < cmds.length; j++) {
           var cmd = cmds[j]
@@ -128,33 +130,33 @@ export default {
               ? cmd.command
               : []
 
-          var main = rawAliases[0] ? cleanAlias(rawAliases[0]) : null
-          if (!main) continue
-
-          var extra = rawAliases
-            .slice(1, 4)
+          var aliases = rawAliases
             .map(function (a) {
               return cleanAlias(a)
             })
             .filter(Boolean)
 
-          var line = '┃  ' + prefix + main
-          if (extra.length) line += '  ·  ' + extra.join(' · ')
-          if (cmd.uso) line += '  ' + cmd.uso
+          if (!aliases.length) continue
 
-          menu += line + '\n'
+          var shown = aliases.slice(0, 3).map(function (a) {
+            return '`' + prefix + a + '`'
+          })
+
+          menu += '  ◈  ' + shown.join('  ·  ')
+          if (cmd.uso) menu += '  _' + cmd.uso + '_'
+          menu += '\n'
 
           if (cmd.desc) {
-            menu += '┃     ↳ ' + cmd.desc + '\n'
+            menu += '      ╰ ' + cmd.desc + '\n'
           }
+          menu += '\n'
         }
-
-        menu += '┃\n'
-        menu += '┗━━━━━━━━━━━━\n\n'
       }
 
-      menu += '_Filtra con_ *' + prefix + 'menu <categoría>*\n'
-      menu += '_Ej:_ *' + prefix + 'menu downloader*'
+      menu += '———————— ✦ ————————\n\n'
+      menu += 'Filtra › *' + prefix + 'menu <categoría>*\n'
+      menu += 'Ejemplo › *' + prefix + 'menu downloader*\n\n'
+      menu += 'Listo para usar 🐢'
 
       var ctxInfo = {
         mentionedJid: owner ? [owner] : [],
