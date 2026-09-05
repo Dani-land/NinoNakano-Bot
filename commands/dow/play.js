@@ -8,7 +8,7 @@ const DVYER_AUDIO = 'https://dv-yer-api.online/ytmp3'
 const DVYER_VIDEO = 'https://dv-yer-api.online/ytmp4'
 
 const NEWSLETTER_JID = '120363420575743790@newsletter'
-const NEWSLETTER_NAME = 'ミ★ 𝙎𝙝𝙖𝙙𝙤𝙬 𝙐𝙥𝙙𝙖𝙩𝙚𝙨 ★彡'
+const NEWSLETTER_NAME = 'ミ★ Nino / wa ★彡'
 
 const HEADERS = {
   'user-agent':
