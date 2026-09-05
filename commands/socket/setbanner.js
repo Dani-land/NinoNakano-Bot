@@ -3,7 +3,7 @@ import FormData from 'form-data'
 import { isSocketOwner } from '../../lib/utils.js'
 
 const NYXDL_UPLOAD =
-  'https://nyxdlapi.vercel.app/api/tools/cloudl?apikey=nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
+  'https://nyxdlapi.vercel.app/api/tools/tourl?apikey=nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
 
 async function uploadToNyxDL(buffer, mime) {
   const ext = (mime && mime.split('/')[1]) || 'bin'
@@ -38,9 +38,7 @@ async function uploadToNyxDL(buffer, mime) {
   }
 
   const file =
-    data.result &&
-    data.result.files &&
-    data.result.files[0]
+    data.result && data.result.files && data.result.files[0]
       ? data.result.files[0]
       : null
 
@@ -78,9 +76,8 @@ export default {
       return m.reply(
         '⌗ 𝗦𝗘𝗧 • 𝗕𝗔𝗡𝗡𝗘𝗥\n\n' +
           '✦ Envía o responde una imagen/video.\n' +
-          '✧ También puedes pegar un link directo.\n\n' +
-          '❍ Ejemplo:\n' +
-          '> setbanner https://ejemplo.com/banner.jpg'
+          '✧ O pega un link directo.\n\n' +
+          '❍ Ejemplo:\n> setbanner https://ejemplo.com/banner.jpg'
       )
     }
 
@@ -90,8 +87,7 @@ export default {
         '⌗ 𝗕𝗔𝗡𝗡𝗘𝗥 • 𝗔𝗖𝗧𝗨𝗔𝗟𝗜𝗭𝗔𝗗𝗢\n\n' +
           '✦ Banner de *' +
           (config.namebot2 || 'el bot') +
-          '* actualizado.\n' +
-          '✧ Guardado con link directo.'
+          '* guardado.'
       )
     }
 
@@ -101,25 +97,17 @@ export default {
         ? m
         : null
 
-    if (!q) {
-      return m.reply('✦ Responde a una imagen o video, o envía un link.')
-    }
+    if (!q) return m.reply('✦ Responde a una imagen/video o envía un link.')
 
     const mime = (q.msg || q).mimetype || q.mediaType || ''
 
     if (!/image\/(png|jpe?g|gif|webp)|video\/mp4/.test(mime)) {
-      return m.reply(
-        '⌗ 𝗘𝗥𝗥𝗢𝗥\n\n' +
-          '✦ Archivo no válido.\n' +
-          '✧ Usa JPG, PNG, GIF, WEBP o MP4.'
-      )
+      return m.reply('✦ Usa JPG, PNG, GIF, WEBP o MP4.')
     }
 
     try {
       const media = await q.download()
-      if (!media) {
-        return m.reply('✦ No se pudo descargar el archivo.')
-      }
+      if (!media) return m.reply('✦ No se pudo descargar el archivo.')
 
       await m.reply('⏳ Subiendo banner...')
 
