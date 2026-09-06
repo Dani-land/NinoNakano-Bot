@@ -99,8 +99,6 @@ async function callNyxdl(endpoint, ytUrl) {
       if (!res.ok) throw new Error('NyxDL HTTP ' + res.status + ': ' + text.slice(0, 180))
 
       var data = JSON.parse(text)
-
-      // NyxDL mete todo dentro de "result", no al nivel superior del JSON.
       var r = (data && data.result) || {}
       var dl =
         r.download_url ||
@@ -123,7 +121,7 @@ async function callNyxdl(endpoint, ytUrl) {
       if (i < 2) await new Promise(r => setTimeout(r, 2000))
     }
   }
-  throw new Error('No se pudo conectar con NyxDL.\nDetalle: ' + ((lastErr && lastErr.message) || 'error'))
+  throw new Error('No se pudo conectar con NyxDL.')
 }
 
 async function fixFaststart(buffer) {
@@ -134,7 +132,6 @@ async function fixFaststart(buffer) {
 
   try {
     fs.writeFileSync(inPath, buffer)
-
     await new Promise((resolve, reject) => {
       ffmpeg(inPath)
         .outputOptions(['-c copy', '-movflags +faststart'])
@@ -142,7 +139,6 @@ async function fixFaststart(buffer) {
         .on('end', resolve)
         .on('error', reject)
     })
-
     const fixed = fs.readFileSync(outPath)
     return fixed
   } finally {
