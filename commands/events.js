@@ -98,10 +98,10 @@ export const participantsUpdate = async (client, anu) => {
             const pp = await client.profilePictureUrl(jid, 'image').catch(_ => 'https://d0mwa043ankuvadx.public.blob.vercel-storage.com/nyx/33UYPOQ.jpg')
 
             if (anu.action === 'add' && chat?.welcome && isPrimary) {
-                const caption = `✦ Bienvenido
+                const caption = `ᰔᩚ Bienvenido
 
 ❀ Usuario › @${phone}
-✧ Grupo › ${metadata.subject}
+ꕤ Grupo › ${metadata.subject}
 ✿ Miembros › ${memberCount}
 
 ꕤ Esperamos que disfrutes tu estancia.
@@ -116,10 +116,10 @@ export const participantsUpdate = async (client, anu) => {
             }
 
             if ((anu.action === 'remove' || anu.action === 'leave') && chat?.welcome && isPrimary) {
-                const caption = `✦ Un miembro se ha despedido
+                const caption = `ꕥ Un miembro se ha despedido
 
 ❀ Usuario › @${phone}
-✧ Integrantes › ${memberCount}
+ꕤ Integrantes › ${memberCount}
 
 ꒰୨୧꒱ Te deseamos lo mejor.
 
