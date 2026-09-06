@@ -3,16 +3,15 @@ import fetch from 'node-fetch'
 import sharp from 'sharp'
 
 const limit = 300
-const DVYER_API_KEY = 'dvyer2008'
-const DVYER_AUDIO = 'https://dv-yer-api.online/ytmp3'
-const DVYER_VIDEO = 'https://dv-yer-api.online/ytmp4'
+const NYXDL_API_KEY = 'nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
+const NYXDL_AUDIO = 'https://nyxdlapi.vercel.app/api/downloads/youtube'
+const NYXDL_VIDEO = 'https://nyxdlapi.vercel.app/api/downloads/youtube/mp4'
 
 const NEWSLETTER_JID = '120363420575743790@newsletter'
 const NEWSLETTER_NAME = 'ミ★ Nino / wa ★彡'
 
 const HEADERS = {
-  'user-agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+  'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
 }
 
 function isYTUrl(u) {
@@ -44,9 +43,7 @@ function extractVideoId(url) {
   try {
     var full = url.indexOf('http') === 0 ? url : 'https://' + url
     var u = new URL(full)
-    if (u.hostname.indexOf('youtu.be') !== -1) {
-      return u.pathname.replace('/', '').split('/')[0]
-    }
+    if (u.hostname.indexOf('youtu.be') !== -1) return u.pathname.replace('/', '').split('/')[0]
     return u.searchParams.get('v') || null
   } catch (e) {
     return null
@@ -63,15 +60,9 @@ function formatDuration(sec) {
   return m + ':' + (s < 10 ? '0' : '') + s
 }
 
-async function callDvYer(endpoint, ytUrl, quality) {
+async function callNyxdl(endpoint, ytUrl, quality) {
   var clean = abs(ytUrl)
-  if (!clean) {
-    if (ytUrl && String(ytUrl).indexOf('http') === 0) clean = String(ytUrl).trim()
-    else if (ytUrl) clean = 'https://' + String(ytUrl).trim()
-  }
-  if (!clean || !/^https?:\/\//i.test(clean)) {
-    throw new Error('URL de YouTube inválida: ' + ytUrl)
-  }
+  if (!clean) clean = 'https://' + String(ytUrl).trim()
 
   var apiUrl =
     endpoint +
@@ -79,9 +70,9 @@ async function callDvYer(endpoint, ytUrl, quality) {
     encodeURIComponent(clean) +
     (quality ? '&quality=' + encodeURIComponent(quality) : '') +
     '&apikey=' +
-    DVYER_API_KEY
+    encodeURIComponent(NYXDL_API_KEY)
 
-  console.log('[DVYER] GET', apiUrl)
+  console.log('[NYXDL] GET', apiUrl)
 
   var lastErr = null
   for (var i = 1; i <= 2; i++) {
@@ -89,9 +80,7 @@ async function callDvYer(endpoint, ytUrl, quality) {
       var controller = typeof AbortController !== 'undefined' ? new AbortController() : null
       var timer = null
       if (controller) {
-        timer = setTimeout(function () {
-          controller.abort()
-        }, 90000)
+        timer = setTimeout(() => controller.abort(), 90000)
       }
 
       var res = await fetch(apiUrl, {
@@ -102,31 +91,30 @@ async function callDvYer(endpoint, ytUrl, quality) {
       if (timer) clearTimeout(timer)
 
       var text = await res.text()
-      if (!res.ok) throw new Error('DVYER HTTP ' + res.status + ': ' + text.slice(0, 180))
+      if (!res.ok) throw new Error('NyxDL HTTP ' + res.status + ': ' + text.slice(0, 180))
 
       var data = JSON.parse(text)
       var dl = abs(data.download_url) || abs(data.url) || abs(data.stream_url)
 
-      if (!data || !data.ok || !dl) {
-        throw new Error((data && data.message) || 'DVYER no devolvió link de descarga.')
+      if (!data || !data.status || !dl) {
+        throw new Error((data && data.message) || 'NyxDL no devolvió link de descarga.')
       }
 
       return {
         dl: dl,
         title: data.title || 'Sin título',
-        duration: data.duration_seconds || null,
+        duration: data.duration || null,
         quality: data.quality || null,
-        size: data.size_mb ? data.size_mb + ' MB' : null,
+        size: data.size || null,
         filename: data.filename || null,
       }
     } catch (e) {
       lastErr = e
-      console.log('[DVYER] intento ' + i + ' falló:', e.message)
-      if (i < 2) await new Promise(function (r) { setTimeout(r, 2000) })
+      console.log('[NyxDL] intento ' + i + ' falló:', e.message)
+      if (i < 2) await new Promise(r => setTimeout(r, 2000))
     }
   }
-
-  throw new Error('No se pudo conectar con la API.\nDetalle: ' + ((lastErr && lastErr.message) || 'error'))
+  throw new Error('No se pudo conectar con NyxDL.\nDetalle: ' + ((lastErr && lastErr.message) || 'error'))
 }
 
 async function getThumbBuffer(videoInfo) {
@@ -176,8 +164,8 @@ async function sendMediaOnly(opts) {
   var thumbBuffer = opts.thumbBuffer
 
   var result = isAudio
-    ? await callDvYer(DVYER_AUDIO, url, null)
-    : await callDvYer(DVYER_VIDEO, url, '360p')
+    ? await callNyxdl(NYXDL_AUDIO, url, null)
+    : await callNyxdl(NYXDL_VIDEO, url, '360p')
 
   var finalTitle = result.title || title || 'archivo'
   var dl = abs(result.dl)
