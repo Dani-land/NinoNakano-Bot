@@ -1,6 +1,14 @@
 import yts from 'yt-search'
 import fetch from 'node-fetch'
 import sharp from 'sharp'
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
+import crypto from 'crypto'
+import ffmpegPath from 'ffmpeg-static'
+import ffmpeg from 'fluent-ffmpeg'
+
+ffmpeg.setFfmpegPath(ffmpegPath)
 
 const limit = 300
 const NYXDL_API_KEY = 'nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
@@ -118,6 +126,31 @@ async function callNyxdl(endpoint, ytUrl) {
   throw new Error('No se pudo conectar con NyxDL.\nDetalle: ' + ((lastErr && lastErr.message) || 'error'))
 }
 
+async function fixFaststart(buffer) {
+  const tmpDir = os.tmpdir()
+  const id = crypto.randomBytes(6).toString('hex')
+  const inPath = path.join(tmpDir, `in_${id}.mp4`)
+  const outPath = path.join(tmpDir, `out_${id}.mp4`)
+
+  try {
+    fs.writeFileSync(inPath, buffer)
+
+    await new Promise((resolve, reject) => {
+      ffmpeg(inPath)
+        .outputOptions(['-c copy', '-movflags +faststart'])
+        .save(outPath)
+        .on('end', resolve)
+        .on('error', reject)
+    })
+
+    const fixed = fs.readFileSync(outPath)
+    return fixed
+  } finally {
+    try { fs.unlinkSync(inPath) } catch (e) {}
+    try { fs.unlinkSync(outPath) } catch (e) {}
+  }
+}
+
 async function getThumbBuffer(videoInfo) {
   var thumbSrc = abs(videoInfo && videoInfo.thumbnail)
   if (!thumbSrc) return null
@@ -214,6 +247,13 @@ async function sendMediaOnly(opts) {
     if (!vres.ok) throw new Error('HTTP ' + vres.status)
     var vbuf = Buffer.from(await vres.arrayBuffer())
     if (vbuf.length < 10000) throw new Error('archivo muy pequeño')
+
+    try {
+      vbuf = await fixFaststart(vbuf)
+    } catch (fixErr) {
+      console.log('[play] fixFaststart falló, se manda tal cual:', fixErr.message)
+    }
+
     await client.sendMessage(
       m.chat,
       {
