@@ -1,14 +1,6 @@
 import yts from 'yt-search'
 import fetch from 'node-fetch'
 import sharp from 'sharp'
-import fs from 'fs'
-import os from 'os'
-import path from 'path'
-import crypto from 'crypto'
-import ffmpegPath from 'ffmpeg-static'
-import ffmpeg from 'fluent-ffmpeg'
-
-ffmpeg.setFfmpegPath(ffmpegPath)
 
 const limit = 300
 const NYXDL_API_KEY = 'nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
@@ -99,13 +91,7 @@ async function callNyxdl(endpoint, ytUrl) {
       if (!res.ok) throw new Error('NyxDL HTTP ' + res.status + ': ' + text.slice(0, 180))
 
       var data = JSON.parse(text)
-      var r = (data && data.result) || {}
-      var dl =
-        r.download_url ||
-        r.download ||
-        r.url ||
-        (r.datos && r.datos.url) ||
-        (r.descarga && r.descarga.url)
+      var dl = data.download_url || data.download || data.url || data.stream_url
 
       if (!data || !data.status || !dl) {
         throw new Error((data && data.message) || 'NyxDL no devolvió link')
@@ -113,7 +99,7 @@ async function callNyxdl(endpoint, ytUrl) {
 
       return {
         dl: dl,
-        title: r.title || r.titulo || 'Sin título',
+        title: data.title || 'Sin título',
       }
     } catch (e) {
       lastErr = e
@@ -122,29 +108,6 @@ async function callNyxdl(endpoint, ytUrl) {
     }
   }
   throw new Error('No se pudo conectar con NyxDL.')
-}
-
-async function fixFaststart(buffer) {
-  const tmpDir = os.tmpdir()
-  const id = crypto.randomBytes(6).toString('hex')
-  const inPath = path.join(tmpDir, `in_${id}.mp4`)
-  const outPath = path.join(tmpDir, `out_${id}.mp4`)
-
-  try {
-    fs.writeFileSync(inPath, buffer)
-    await new Promise((resolve, reject) => {
-      ffmpeg(inPath)
-        .outputOptions(['-c copy', '-movflags +faststart'])
-        .save(outPath)
-        .on('end', resolve)
-        .on('error', reject)
-    })
-    const fixed = fs.readFileSync(outPath)
-    return fixed
-  } finally {
-    try { fs.unlinkSync(inPath) } catch (e) {}
-    try { fs.unlinkSync(outPath) } catch (e) {}
-  }
 }
 
 async function getThumbBuffer(videoInfo) {
@@ -211,6 +174,7 @@ async function sendMediaOnly(opts) {
     return
   }
 
+  // Video
   var asDoc = asDocument
   if (!asDoc) {
     try {
@@ -242,13 +206,6 @@ async function sendMediaOnly(opts) {
     if (!vres.ok) throw new Error('HTTP ' + vres.status)
     var vbuf = Buffer.from(await vres.arrayBuffer())
     if (vbuf.length < 10000) throw new Error('archivo muy pequeño')
-
-    try {
-      vbuf = await fixFaststart(vbuf)
-    } catch (fixErr) {
-      console.log('[play] fixFaststart falló, se manda tal cual:', fixErr.message)
-    }
-
     await client.sendMessage(
       m.chat,
       {
@@ -284,15 +241,13 @@ export default {
   ],
   category: 'downloader',
 
-  // === RUN ARREGLADO ===
   run: async function (ctx) {
-    const client = ctx.client
-    const m = ctx.m
-    const command = ctx.command
-    const text = ctx.text
+    var client = ctx.client
+    var m = ctx.m
+    var command = ctx.command
+    var text = ctx.text
 
     try {
-      // ... (código utiliza función run para reconocerlo by Yuliethxz)
       if (!text || !String(text).trim()) {
         return client.reply(m.chat, '✐ Ingresa un nombre o URL de YouTube.', m)
       }
@@ -300,7 +255,58 @@ export default {
       var isAudio = ['play', 'mp3', 'playaudio', 'ytmp3', 'playdoc', 'play2'].indexOf(command) !== -1
       var asDocument = ['playdoc', 'mp4doc'].indexOf(command) !== -1
 
-      await sendMediaOnly({ ... })
+      var url
+      var title
+      var videoInfo
+
+      if (isYTUrl(text)) {
+        url = String(text).trim()
+        if (url.indexOf('http') !== 0) url = 'https://' + url
+        var id = extractVideoId(url)
+        try {
+          videoInfo = id ? await yts({ videoId: id }) : null
+          title = (videoInfo && videoInfo.title) || 'Video'
+        } catch (e) {
+          title = 'Video'
+        }
+      } else {
+        var search = await yts(String(text).trim())
+        if (!search || !search.all || !search.all.length) {
+          return m.reply('ꕥ No encontré resultados.')
+        }
+        videoInfo = search.all[0]
+        title = videoInfo.title
+        url = videoInfo.url
+      }
+
+      url = abs(url) || url
+      if (!url || !/^https?:\/\//i.test(url)) {
+        return m.reply('✘ No pude obtener una URL válida de YouTube.')
+      }
+
+      var thumbBuffer = await getThumbBuffer(videoInfo)
+      var infoText = buildInfoText(title, videoInfo, isAudio, asDocument)
+      var ctx2 = newsletterContext()
+
+      if (thumbBuffer) {
+        await client.sendMessage(
+          m.chat,
+          { image: thumbBuffer, caption: infoText, contextInfo: ctx2 },
+          { quoted: m }
+        )
+      } else {
+        await client.sendMessage(m.chat, { text: infoText, contextInfo: ctx2 }, { quoted: m })
+      }
+
+      await sendMediaOnly({
+        client: client,
+        m: m,
+        url: url,
+        title: title,
+        isAudio: isAudio,
+        asDocument: asDocument,
+        thumbBuffer: thumbBuffer,
+      })
     } catch (e) {
       console.error('[play]', e)
       m.reply('✘ Error detectado.\n\n⌗» ' + e.message)
