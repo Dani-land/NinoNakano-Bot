@@ -1,15 +1,16 @@
 > [!NOTE]
 > **Nino Nakano Bot no para de crecer.** Cada semana llegan funciones nuevas, mejoras y sorpresas para que tu experiencia en WhatsApp sea única. No te quedes fuera de nada. [¡Únete a nuestro canal!](https://whatsapp.com/channel/0029VbBUzJ6DzgT8o9NiMq2b)
 
-<p align="center"> 
-<img src="https://d0mwa043ankuvadx.public.blob.vercel-storage.com/nyx/1fDFmi0.jpg" alt="Nino Nakano Bot" style="width: 75%; height: auto; max-width: 100px;">
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:1c007b,100:9b33b0&height=200&section=header&text=NINO%20NAKANO%20BOT&fontSize=55&fontColor=ffffff&animation=fadeIn&fontAlignY=40" width="100%">
+</p>
 
 <p align="center">
   <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&duration=3000&pause=1000&color=9B33B0&center=true&vCenter=true&width=480&lines=Bienvenido+a+Nino+Nakano+Bot+%E2%9C%A6;R%C3%A1pido.+Estable.+Adictivo.;Construido+con+Baileys;Hecho+para+destacar" alt="Typing SVG" />
 </p>
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/74038190/213910845-af37a709-8995-40d6-be59-724526e3c3d7.gif" width="100%">
+  <img src="https://user-images.githubusercontent.com/74038190/212748830-4c709398-a386-4761-84d7-9e10b98fbe6e.gif" width="80%">
 </p>
 
 <p align="center"> 
@@ -48,7 +49,7 @@ Usa **siempre** la librería oficial de Baileys. Nada de forks, nada de mods, na
 ---
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/74038190/212284115-f47cd8ff-2ffb-4b04-b5bf-4d1c14c0247f.gif" width="60%">
+  <img src="https://user-images.githubusercontent.com/74038190/213911110-aedbef38-a29f-4b6b-a65c-11608b4f75a5.gif" width="50%">
 </p>
 
 ### ⚡ Instalación Rápida
