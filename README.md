@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Platane/snk/output/github-contribution-grid-snake.svg" width="100%">
+  <img src="https://user-images.githubusercontent.com/74038190/213910845-af37a709-8995-40d6-be59-724526e3c3d7.gif" width="100%">
 </p>
 
 <p align="center"> 
@@ -46,6 +46,10 @@ Si buscas un bot con personalidad, ligero y en constante evolución, llegaste al
 Usa **siempre** la librería oficial de Baileys. Nada de forks, nada de mods, nada de versiones "mejoradas" por terceros — solo así te aseguras estabilidad y soporte real.
 
 ---
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/74038190/212284115-f47cd8ff-2ffb-4b04-b5bf-4d1c14c0247f.gif" width="60%">
+</p>
 
 ### ⚡ Instalación Rápida
 
