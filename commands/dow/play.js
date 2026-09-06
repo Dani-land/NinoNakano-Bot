@@ -60,7 +60,7 @@ function formatDuration(sec) {
   return m + ':' + (s < 10 ? '0' : '') + s
 }
 
-async function callNyxdl(endpoint, ytUrl, quality) {
+async function callNyxdl(endpoint, ytUrl) {
   var clean = abs(ytUrl)
   if (!clean) clean = 'https://' + String(ytUrl).trim()
 
@@ -68,11 +68,10 @@ async function callNyxdl(endpoint, ytUrl, quality) {
     endpoint +
     '?url=' +
     encodeURIComponent(clean) +
-    (quality ? '&quality=' + encodeURIComponent(quality) : '') +
     '&apikey=' +
     encodeURIComponent(NYXDL_API_KEY)
 
-  console.log('[NYXDL] GET', apiUrl)
+  console.log('[NYXDL]', apiUrl)
 
   var lastErr = null
   for (var i = 1; i <= 2; i++) {
@@ -94,19 +93,15 @@ async function callNyxdl(endpoint, ytUrl, quality) {
       if (!res.ok) throw new Error('NyxDL HTTP ' + res.status + ': ' + text.slice(0, 180))
 
       var data = JSON.parse(text)
-      var dl = abs(data.download_url) || abs(data.url) || abs(data.stream_url)
+      var dl = data.download_url || data.download || data.url || data.stream_url
 
       if (!data || !data.status || !dl) {
-        throw new Error((data && data.message) || 'NyxDL no devolvió link de descarga.')
+        throw new Error((data && data.message) || 'NyxDL no devolvió link')
       }
 
       return {
         dl: dl,
         title: data.title || 'Sin título',
-        duration: data.duration || null,
-        quality: data.quality || null,
-        size: data.size || null,
-        filename: data.filename || null,
       }
     } catch (e) {
       lastErr = e
@@ -114,7 +109,7 @@ async function callNyxdl(endpoint, ytUrl, quality) {
       if (i < 2) await new Promise(r => setTimeout(r, 2000))
     }
   }
-  throw new Error('No se pudo conectar con NyxDL.\nDetalle: ' + ((lastErr && lastErr.message) || 'error'))
+  throw new Error('No se pudo conectar con NyxDL.')
 }
 
 async function getThumbBuffer(videoInfo) {
@@ -144,12 +139,8 @@ function buildInfoText(title, videoInfo, isAudio, asDocument) {
   lines.push('')
   lines.push(
     isAudio
-      ? asDocument
-        ? '✐ Enviando audio (documento)...'
-        : '✐ Enviando audio...'
-      : asDocument
-        ? '✐ Enviando video (documento)...'
-        : '✐ Enviando video...'
+      ? asDocument ? '✐ Enviando audio (documento)...' : '✐ Enviando audio...'
+      : asDocument ? '✐ Enviando video (documento)...' : '✐ Enviando video...'
   )
   return lines.join('\n')
 }
@@ -164,12 +155,12 @@ async function sendMediaOnly(opts) {
   var thumbBuffer = opts.thumbBuffer
 
   var result = isAudio
-    ? await callNyxdl(NYXDL_AUDIO, url, null)
-    : await callNyxdl(NYXDL_VIDEO, url, '360p')
+    ? await callNyxdl(NYXDL_AUDIO, url)
+    : await callNyxdl(NYXDL_VIDEO, url)
 
   var finalTitle = result.title || title || 'archivo'
   var dl = abs(result.dl)
-  if (!dl) throw new Error('Link de descarga vacío o inválido')
+  if (!dl) throw new Error('Link de descarga vacío')
 
   var ctx = newsletterContext()
 
@@ -185,6 +176,7 @@ async function sendMediaOnly(opts) {
     return
   }
 
+  // Video
   var asDoc = asDocument
   if (!asDoc) {
     try {
