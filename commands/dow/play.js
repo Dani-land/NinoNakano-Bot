@@ -91,7 +91,15 @@ async function callNyxdl(endpoint, ytUrl) {
       if (!res.ok) throw new Error('NyxDL HTTP ' + res.status + ': ' + text.slice(0, 180))
 
       var data = JSON.parse(text)
-      var dl = data.download_url || data.download || data.url || data.stream_url
+
+      // NyxDL mete todo dentro de "result", no al nivel superior del JSON.
+      var r = (data && data.result) || {}
+      var dl =
+        r.download_url ||
+        r.download ||
+        r.url ||
+        (r.datos && r.datos.url) ||
+        (r.descarga && r.descarga.url)
 
       if (!data || !data.status || !dl) {
         throw new Error((data && data.message) || 'NyxDL no devolvió link')
@@ -99,7 +107,7 @@ async function callNyxdl(endpoint, ytUrl) {
 
       return {
         dl: dl,
-        title: data.title || 'Sin título',
+        title: r.title || r.titulo || 'Sin título',
       }
     } catch (e) {
       lastErr = e
@@ -107,7 +115,7 @@ async function callNyxdl(endpoint, ytUrl) {
       if (i < 2) await new Promise(r => setTimeout(r, 2000))
     }
   }
-  throw new Error('No se pudo conectar con NyxDL.')
+  throw new Error('No se pudo conectar con NyxDL.\nDetalle: ' + ((lastErr && lastErr.message) || 'error'))
 }
 
 async function getThumbBuffer(videoInfo) {
