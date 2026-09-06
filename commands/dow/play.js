@@ -78,9 +78,7 @@ async function callNyxdl(endpoint, ytUrl) {
     try {
       var controller = typeof AbortController !== 'undefined' ? new AbortController() : null
       var timer = null
-      if (controller) {
-        timer = setTimeout(() => controller.abort(), 90000)
-      }
+      if (controller) timer = setTimeout(() => controller.abort(), 90000)
 
       var res = await fetch(apiUrl, {
         headers: { accept: 'application/json', 'user-agent': HEADERS['user-agent'] },
