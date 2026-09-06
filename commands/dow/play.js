@@ -292,17 +292,13 @@ export default {
     const text = ctx.text
 
     try {
-      // ... (todo el código de la función run queda igual)
+      // ... (código utiliza función run para reconocerlo by Yuliethxz)
       if (!text || !String(text).trim()) {
         return client.reply(m.chat, '✐ Ingresa un nombre o URL de YouTube.', m)
       }
 
       var isAudio = ['play', 'mp3', 'playaudio', 'ytmp3', 'playdoc', 'play2'].indexOf(command) !== -1
       var asDocument = ['playdoc', 'mp4doc'].indexOf(command) !== -1
-
-      // ... (resto del código igual)
-
-      // Aquí va todo el resto de la función (lo mismo de antes)
 
       await sendMediaOnly({ ... })
     } catch (e) {
