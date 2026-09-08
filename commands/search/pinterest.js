@@ -114,13 +114,13 @@ export default {
         try {
           const buffer = await downloadImage(imgUrl)
           const caption =
-            '✿ Pinterest Search\n\n' +
+            'ꕥ ᑭIᑎTᗴᖇᗴՏT Տᗴᗩᖇᑕᕼ\n\n' +
             '⌗» ' +
             (i + 1) +
             '. ' +
             (v.title || 'Sin título') +
             '\n' +
-            '☕︎ Búsqueda › ' +
+            '𓅓 𝓑𝓤𝓢𝓠𝓤𝓔𝓓𝓐 › ' +
             query
 
           albumItems.push({
