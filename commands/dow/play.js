@@ -1,6 +1,14 @@
 import yts from 'yt-search'
 import fetch from 'node-fetch'
 import sharp from 'sharp'
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
+import crypto from 'crypto'
+import ffmpegPath from 'ffmpeg-static'
+import ffmpeg from 'fluent-ffmpeg'
+
+ffmpeg.setFfmpegPath(ffmpegPath)
 
 const limit = 300
 const NYXDL_API_KEY = 'nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
@@ -118,6 +126,31 @@ async function callNyxdl(endpoint, ytUrl) {
   throw new Error('No se pudo conectar con NyxDL.\nDetalle: ' + ((lastErr && lastErr.message) || 'error'))
 }
 
+async function fixFaststart(buffer) {
+  const tmpDir = os.tmpdir()
+  const id = crypto.randomBytes(6).toString('hex')
+  const inPath = path.join(tmpDir, `in_${id}.mp4`)
+  const outPath = path.join(tmpDir, `out_${id}.mp4`)
+
+  try {
+    fs.writeFileSync(inPath, buffer)
+
+    await new Promise((resolve, reject) => {
+      ffmpeg(inPath)
+        .outputOptions(['-c copy', '-movflags +faststart'])
+        .save(outPath)
+        .on('end', resolve)
+        .on('error', reject)
+    })
+
+    const fixed = fs.readFileSync(outPath)
+    return fixed
+  } finally {
+    try { fs.unlinkSync(inPath) } catch (e) {}
+    try { fs.unlinkSync(outPath) } catch (e) {}
+  }
+}
+
 async function getThumbBuffer(videoInfo) {
   var thumbSrc = abs(videoInfo && videoInfo.thumbnail)
   if (!thumbSrc) return null
@@ -182,24 +215,16 @@ async function sendMediaOnly(opts) {
     return
   }
 
-  // Video: la URL que da la API a veces redirige (302) a otra URL final.
-  // Baileys no sigue esa redirección solo, así que la resolvemos nosotros
-  // antes de mandarla (con un HEAD que sí sigue redirects).
-  var finalDl = dl
+  // Video
   var asDoc = asDocument
-  try {
-    var head = await fetch(dl, { method: 'HEAD', headers: HEADERS, redirect: 'follow' })
-    if (head.url) finalDl = head.url
-    var len = head.headers.get('content-length')
-    var mb = len ? parseInt(len, 10) / (1024 * 1024) : 0
-    if (!asDoc && mb >= limit) asDoc = true
-  } catch (e) {
-    // Si el HEAD falla, probamos igual con un GET que sí sigue redirects.
+  if (!asDoc) {
     try {
-      var getRes = await fetch(dl, { method: 'GET', headers: HEADERS, redirect: 'follow' })
-      if (getRes.url) finalDl = getRes.url
-    } catch (e2) {
-      // Nos quedamos con la URL original si ninguna resolución funcionó.
+      var head = await fetch(dl, { method: 'HEAD', headers: HEADERS })
+      var len = head.headers.get('content-length')
+      var mb = len ? parseInt(len, 10) / (1024 * 1024) : 0
+      if (mb >= limit) asDoc = true
+    } catch (e) {
+      asDoc = true
     }
   }
 
@@ -207,7 +232,7 @@ async function sendMediaOnly(opts) {
     await client.sendMessage(
       m.chat,
       {
-        document: { url: finalDl },
+        document: { url: dl },
         fileName: finalTitle + '.mp4',
         mimetype: 'video/mp4',
         contextInfo: ctx,
@@ -217,18 +242,44 @@ async function sendMediaOnly(opts) {
     return
   }
 
-  await client.sendMessage(
-    m.chat,
-    {
-      video: { url: finalDl },
-      mimetype: 'video/mp4',
-      fileName: finalTitle + '.mp4',
-      ptv: false,
-      jpegThumbnail: thumbBuffer || undefined,
-      contextInfo: ctx,
-    },
-    { quoted: m }
-  )
+  try {
+    var vres = await fetch(dl, { headers: HEADERS, redirect: 'follow' })
+    if (!vres.ok) throw new Error('HTTP ' + vres.status)
+    var vbuf = Buffer.from(await vres.arrayBuffer())
+    if (vbuf.length < 10000) throw new Error('archivo muy pequeño')
+
+    try {
+      vbuf = await fixFaststart(vbuf)
+    } catch (fixErr) {
+      console.log('[play] fixFaststart falló, se manda tal cual:', fixErr.message)
+    }
+
+    await client.sendMessage(
+      m.chat,
+      {
+        video: vbuf,
+        mimetype: 'video/mp4',
+        fileName: finalTitle + '.mp4',
+        ptv: false,
+        jpegThumbnail: thumbBuffer || undefined,
+        contextInfo: ctx,
+      },
+      { quoted: m }
+    )
+  } catch (e) {
+    await client.sendMessage(
+      m.chat,
+      {
+        video: { url: dl },
+        mimetype: 'video/mp4',
+        fileName: finalTitle + '.mp4',
+        ptv: false,
+        jpegThumbnail: thumbBuffer || undefined,
+        contextInfo: ctx,
+      },
+      { quoted: m }
+    )
+  }
 }
 
 export default {
@@ -305,14 +356,8 @@ export default {
         thumbBuffer: thumbBuffer,
       })
     } catch (e) {
-      console.error('[play] ERROR COMPLETO:', e)
-      var detalle =
-        (e && e.message) ||
-        (e && e.output && e.output.payload && e.output.payload.message) ||
-        (typeof e === 'string' ? e : null) ||
-        JSON.stringify(e) ||
-        'Error desconocido (revisa la consola del bot)'
-      m.reply('✘ Error detectado.\n\n⌗» ' + detalle)
+      console.error('[play]', e)
+      m.reply('✘ Error detectado.\n\n⌗» ' + e.message)
     }
   },
 }
