@@ -53,7 +53,7 @@ export default {
     var args = ctx.args || []
 
     if (!args.length) {
-      return m.reply('✧ Ingresa algo para buscar en TikTok.')
+      return m.reply('❦︎ Ingresa algo para buscar en TikTok.')
     }
 
     var query = args.join(' ').trim()
@@ -110,12 +110,12 @@ export default {
       }
 
       await m.reply(
-        '✐ Encontré *' + results.length + '* resultados. Enviando *' + usable.length + '* videos...'
+        'ꨄ︎ 𝙴𝚗𝚌𝚘𝚗𝚝𝚛𝚎 *' + results.length + '* 𝚛𝚎𝚜𝚞𝚕𝚝𝚊𝚍𝚘𝚜. 𝙴𝚗𝚟𝚒𝚊𝚗𝚍𝚘 *' + usable.length + '* 𝚟𝚒𝚍𝚎𝚘𝚜...'
       )
 
       var album = usable.map(function (v, idx) {
         var caption =
-          '*ꕥ TikTok Búsqueda*\n' +
+          '*ꕥ TIKTOK ᗷᑌՏᑫᑌᗴᗪᗩ*\n' +
           '⌗» ' +
           (idx + 1) +
           '. ' +
