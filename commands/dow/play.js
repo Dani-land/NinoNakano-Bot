@@ -299,8 +299,14 @@ export default {
         thumbBuffer: thumbBuffer,
       })
     } catch (e) {
-      console.error('[play]', e)
-      m.reply('✘ Error detectado.\n\n⌗» ' + e.message)
+      console.error('[play] ERROR COMPLETO:', e)
+      var detalle =
+        (e && e.message) ||
+        (e && e.output && e.output.payload && e.output.payload.message) ||
+        (typeof e === 'string' ? e : null) ||
+        JSON.stringify(e) ||
+        'Error desconocido (revisa la consola del bot)'
+      m.reply('✘ Error detectado.\n\n⌗» ' + detalle)
     }
   },
 }
