@@ -84,7 +84,7 @@ export default {
     try {
       const { mediaList, username, caption, likes, comments } = await resolveInstagram(url)
 
-      const info = `*INSTAGRAM*
+      const info = `*𝕀𝕟𝕤𝕥𝕒𝕘𝕣𝕒𝕞*
 
 ✰ *Cuenta* › ${username}
 ✿ *Likes* › ${likes ?? 'N/A'}
@@ -92,7 +92,7 @@ export default {
 ✿ *Contenido* › ${mediaList.length > 1 ? `${mediaList.length} archivos` : mediaList[0].tipo}
 ✰ *Enlace* › ${url}${caption ? `\n\n✎ ${caption}` : ''}
 
-☕︎ *API:* https://nyxdlapi.vercel.app`.trim()
+☕︎ *ᗩᑭI ᑌՏᗩᗪᗩ:* https://nyxdlapi.vercel.app`.trim()
 
       let enviados = 0
 
