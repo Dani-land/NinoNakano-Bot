@@ -182,18 +182,24 @@ async function sendMediaOnly(opts) {
     return
   }
 
-  // Video: se manda la URL directo (igual que el audio), sin descargar ni
-  // reescribir el archivo con ffmpeg. Ese paso extra era el que corrompía
-  // el video que llegaba a WhatsApp.
+  // Video: la URL que da la API a veces redirige (302) a otra URL final.
+  // Baileys no sigue esa redirección solo, así que la resolvemos nosotros
+  // antes de mandarla (con un HEAD que sí sigue redirects).
+  var finalDl = dl
   var asDoc = asDocument
-  if (!asDoc) {
+  try {
+    var head = await fetch(dl, { method: 'HEAD', headers: HEADERS, redirect: 'follow' })
+    if (head.url) finalDl = head.url
+    var len = head.headers.get('content-length')
+    var mb = len ? parseInt(len, 10) / (1024 * 1024) : 0
+    if (!asDoc && mb >= limit) asDoc = true
+  } catch (e) {
+    // Si el HEAD falla, probamos igual con un GET que sí sigue redirects.
     try {
-      var head = await fetch(dl, { method: 'HEAD', headers: HEADERS })
-      var len = head.headers.get('content-length')
-      var mb = len ? parseInt(len, 10) / (1024 * 1024) : 0
-      if (mb >= limit) asDoc = true
-    } catch (e) {
-      // Si el HEAD falla no forzamos documento; se intenta como video normal.
+      var getRes = await fetch(dl, { method: 'GET', headers: HEADERS, redirect: 'follow' })
+      if (getRes.url) finalDl = getRes.url
+    } catch (e2) {
+      // Nos quedamos con la URL original si ninguna resolución funcionó.
     }
   }
 
@@ -201,7 +207,7 @@ async function sendMediaOnly(opts) {
     await client.sendMessage(
       m.chat,
       {
-        document: { url: dl },
+        document: { url: finalDl },
         fileName: finalTitle + '.mp4',
         mimetype: 'video/mp4',
         contextInfo: ctx,
@@ -214,7 +220,7 @@ async function sendMediaOnly(opts) {
   await client.sendMessage(
     m.chat,
     {
-      video: { url: dl },
+      video: { url: finalDl },
       mimetype: 'video/mp4',
       fileName: finalTitle + '.mp4',
       ptv: false,
