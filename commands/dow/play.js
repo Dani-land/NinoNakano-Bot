@@ -16,7 +16,7 @@ const NYXDL_AUDIO = 'https://nyxdlapi.vercel.app/api/downloads/youtube'
 const NYXDL_VIDEO = 'https://nyxdlapi.vercel.app/api/downloads/youtube/mp4'
 
 const NEWSLETTER_JID = '120363420575743790@newsletter'
-const NEWSLETTER_NAME = 'ミ★ Nino / wa ★彡'
+const NEWSLETTER_NAME = '𖣘 ᑎIᑎO ᗯᗩ 𖣘'
 
 const HEADERS = {
   'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
@@ -165,21 +165,21 @@ async function getThumbBuffer(videoInfo) {
 }
 
 function buildInfoText(title, videoInfo, isAudio, asDocument) {
-  var lines = ['✿ *' + (title || 'YouTube') + '*', '']
+  var lines = ['❁ *' + (title || 'YouTube') + '*', '']
   var dur = videoInfo && (videoInfo.timestamp || videoInfo.duration)
-  if (dur) lines.push('> ⌗» Duración › ' + formatDuration(dur))
+  if (dur) lines.push('> ⌗» 𝙳𝚞𝚛𝚊𝚌𝚒𝚘𝚗 › ' + formatDuration(dur))
   if (videoInfo && videoInfo.views != null) {
-    lines.push('> ⌗» Vistas › ' + Number(videoInfo.views).toLocaleString())
+    lines.push('> ⌗» 𝚅𝚒𝚜𝚝𝚊𝚜 › ' + Number(videoInfo.views).toLocaleString())
   }
   if (videoInfo && videoInfo.author && videoInfo.author.name) {
-    lines.push('> ⌗» Canal › ' + videoInfo.author.name)
+    lines.push('> ⌗» 𝙲𝚊𝚗𝚊𝚕 › ' + videoInfo.author.name)
   }
-  if (videoInfo && videoInfo.ago) lines.push('> ⌗» Publicado › ' + videoInfo.ago)
+  if (videoInfo && videoInfo.ago) lines.push('> ⌗» 𝙿𝚞𝚋𝚕𝚒𝚌𝚊𝚍𝚘 › ' + videoInfo.ago)
   lines.push('')
   lines.push(
     isAudio
-      ? asDocument ? '✐ Enviando audio (documento)...' : '✐ Enviando audio...'
-      : asDocument ? '✐ Enviando video (documento)...' : '✐ Enviando video...'
+      ? asDocument ? '✐ Enviando audio (documento)...' : '❀ ᴇɴᴠɪᴀɴᴅᴏ ᴀᴜᴅɪᴏ...'
+      : asDocument ? '✐ Enviando video (documento)...' : '✿︎ ᴇɴᴠɪᴀɴᴅᴏ ᴠɪᴅᴇᴏ...'
   )
   return lines.join('\n')
 }
