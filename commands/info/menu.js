@@ -38,7 +38,7 @@ export default {
 
       var owner = botSettings.owner || ''
       var canalId = botSettings.id || '120363420575743790@newsletter'
-      var canalName = botSettings.nameid || 'ミ★ 𝙉𝙞𝙣𝙤 𝙐𝙥𝙙𝙖𝙩𝙚𝙨 ★彡'
+      var canalName = botSettings.nameid || '𑁍 ᑎIᑎO ᗯᗩ 𑁍'
       var link = botSettings.link || ''
       var banner = botSettings.banner || null
 
@@ -71,9 +71,9 @@ export default {
       var name = m.pushName || 'Usuario'
 
       var menu = ''
-      menu += '𓆩ꨄ︎𓆪  *Nino Nakano Wabot*  𓆩ꨄ︎𓆪\n\n'
+      menu += '☁︎  ᑎIᑎO ᑎᗩKᗩᑎO ᗯᗩᗷOT  ☁︎\n\n'
       menu += saludo + ', *' + name + '*\n'
-      menu += 'Aquí tienes el menú completo 🐢\n\n'
+      menu += '᪥ 𝓐𝓺𝓾𝓲 𝓽𝓲𝓮𝓷𝓮𝓼 𝓮𝓵 𝓶𝓮𝓷𝓾 𝓬𝓸𝓶𝓹𝓵𝓮𝓽𝓸 ᪥\n\n'
 
       menu += '‧₊˚ ɪɴғᴏ ᴅᴇʟ ʙᴏᴛ\n'
       menu += '  ⟡  ' + ownerLabel + '  ·  ' + ownerDisplay + '\n'
@@ -109,7 +109,7 @@ export default {
       }
 
       var catKeys = Object.keys(categories).sort()
-      var marks = ['✦', '✧', '✶', '✧', '⋆']
+      var marks = ['𖧷', '❁', '✶', '✧', '⋆']
 
       for (var c = 0; c < catKeys.length; c++) {
         var cat = catKeys[c]
@@ -118,7 +118,7 @@ export default {
         var cmds = categories[cat]
         var mark = marks[c % marks.length]
 
-        menu += '———————— ✦ ————————\n\n'
+        menu += '———————— 🝮︎︎︎︎︎︎︎ ————————\n\n'
         menu += mark + '  *' + titleCase(cat) + '*\n'
         menu += '   comandos de esta sección\n\n'
 
@@ -153,10 +153,10 @@ export default {
         }
       }
 
-      menu += '———————— ✦ ————————\n\n'
+      menu += '———————— 🝮︎︎︎︎︎︎︎ ————————\n\n'
       menu += 'Filtra › *' + prefix + 'menu <categoría>*\n'
       menu += 'Ejemplo › *' + prefix + 'menu downloader*\n\n'
-      menu += 'Listo para usar 🐢'
+      menu += 'Listo para usar シ︎'
 
       var ctxInfo = {
         mentionedJid: owner ? [owner] : [],
