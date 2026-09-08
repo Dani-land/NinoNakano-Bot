@@ -95,7 +95,7 @@ export const participantsUpdate = async (client, anu) => {
 
             const mentionJid = jid || originalJid
             const phone = mentionJid.split('@')[0]
-            const pp = await client.profilePictureUrl(jid, 'image').catch(_ => 'https://d0mwa043ankuvadx.public.blob.vercel-storage.com/nyx/33UYPOQ.jpg')
+            const pp = await client.profilePictureUrl(jid, 'image').catch(_ => 'https://d0mwa043ankuvadx.public.blob.vercel-storage.com/nyx/gyvbym4.jpg')
 
             if (anu.action === 'add' && chat?.welcome && isPrimary) {
                 const caption = `ᰔᩚ Bienvenido
