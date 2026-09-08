@@ -46,13 +46,13 @@ export default {
         return m.reply('ꕥ No se pudo obtener el video. Verifica que el enlace sea público.')
       }
 
-      const caption = `✰ TikTok ✰
+      const caption = `ꨄ︎ Ⓣ︎Ⓘ︎Ⓚ︎Ⓣ︎Ⓞ︎Ⓚ︎ ꨄ︎
 
-*⌗» Usuario:* ${result.author || result.username || 'Desconocido'}
-*⌗» Descripción:* ${result.title || 'Sin descripción'}
+*𖨆 𝚄𝚜𝚞𝚊𝚛𝚒𝚘:* ${result.author || result.username || 'Desconocido'}
+*⌫ 𝙳𝚎𝚜𝚌𝚛𝚒𝚙𝚌𝚒𝚘𝚗:* ${result.title || 'Sin descripción'}
 *⌗» Canción:* ${result.musicTitle || 'N/A'}${result.musicArtist ? ` - ${result.musicArtist}` : ''}
 
-⌗» Api: ${NYX_BASE}`
+⌗» 𝔸𝕡𝕚: ${NYX_BASE}`
 
       await client.sendMessage(
         m.chat,
