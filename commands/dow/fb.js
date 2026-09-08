@@ -6,7 +6,7 @@ export default {
   run: async ({ client, m, args }) => {
 
     if (!args[0]) {
-      return m.reply('✐ Ingresa el enlace de Facebook.');
+      return m.reply('☁︎ 𝙸𝚗𝚐𝚛𝚎𝚜𝚊 𝚎𝚕 𝚎𝚗𝚕𝚊𝚌𝚎 𝚍𝚎 𝚏𝚊𝚌𝚌𝚎𝚋𝚘𝚘𝚔.');
     }
 
     if (!args[0].match(/facebook\.com|fb\.watch|video\.fb\.com/)) {
@@ -37,9 +37,9 @@ export default {
         throw new Error('No se encontró una resolución válida.');
       }
 
-      const caption = `*乂 FACEBOOK - DOWNLOAD 乂*
+      const caption = `*ᖴᗩᑕᗴᗷOK ᗪOᗯᑎᒪOᗩᗪ*
 
-*✰ Enlace:*  
+*᯽ 𝐄𝐧𝐥𝐚𝐜𝐞:*  
 ${args[0]}`;
 
       await client.sendMessage(
