@@ -1,14 +1,6 @@
 import yts from 'yt-search'
 import fetch from 'node-fetch'
 import sharp from 'sharp'
-import fs from 'fs'
-import os from 'os'
-import path from 'path'
-import crypto from 'crypto'
-import ffmpegPath from 'ffmpeg-static'
-import ffmpeg from 'fluent-ffmpeg'
-
-ffmpeg.setFfmpegPath(ffmpegPath)
 
 const limit = 300
 const NYXDL_API_KEY = 'nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
@@ -126,31 +118,6 @@ async function callNyxdl(endpoint, ytUrl) {
   throw new Error('No se pudo conectar con NyxDL.\nDetalle: ' + ((lastErr && lastErr.message) || 'error'))
 }
 
-async function fixFaststart(buffer) {
-  const tmpDir = os.tmpdir()
-  const id = crypto.randomBytes(6).toString('hex')
-  const inPath = path.join(tmpDir, `in_${id}.mp4`)
-  const outPath = path.join(tmpDir, `out_${id}.mp4`)
-
-  try {
-    fs.writeFileSync(inPath, buffer)
-
-    await new Promise((resolve, reject) => {
-      ffmpeg(inPath)
-        .outputOptions(['-c copy', '-movflags +faststart'])
-        .save(outPath)
-        .on('end', resolve)
-        .on('error', reject)
-    })
-
-    const fixed = fs.readFileSync(outPath)
-    return fixed
-  } finally {
-    try { fs.unlinkSync(inPath) } catch (e) {}
-    try { fs.unlinkSync(outPath) } catch (e) {}
-  }
-}
-
 async function getThumbBuffer(videoInfo) {
   var thumbSrc = abs(videoInfo && videoInfo.thumbnail)
   if (!thumbSrc) return null
@@ -215,7 +182,9 @@ async function sendMediaOnly(opts) {
     return
   }
 
-  // Video
+  // Video: se manda la URL directo (igual que el audio), sin descargar ni
+  // reescribir el archivo con ffmpeg. Ese paso extra era el que corrompía
+  // el video que llegaba a WhatsApp.
   var asDoc = asDocument
   if (!asDoc) {
     try {
@@ -224,7 +193,7 @@ async function sendMediaOnly(opts) {
       var mb = len ? parseInt(len, 10) / (1024 * 1024) : 0
       if (mb >= limit) asDoc = true
     } catch (e) {
-      asDoc = true
+      // Si el HEAD falla no forzamos documento; se intenta como video normal.
     }
   }
 
@@ -242,44 +211,18 @@ async function sendMediaOnly(opts) {
     return
   }
 
-  try {
-    var vres = await fetch(dl, { headers: HEADERS, redirect: 'follow' })
-    if (!vres.ok) throw new Error('HTTP ' + vres.status)
-    var vbuf = Buffer.from(await vres.arrayBuffer())
-    if (vbuf.length < 10000) throw new Error('archivo muy pequeño')
-
-    try {
-      vbuf = await fixFaststart(vbuf)
-    } catch (fixErr) {
-      console.log('[play] fixFaststart falló, se manda tal cual:', fixErr.message)
-    }
-
-    await client.sendMessage(
-      m.chat,
-      {
-        video: vbuf,
-        mimetype: 'video/mp4',
-        fileName: finalTitle + '.mp4',
-        ptv: false,
-        jpegThumbnail: thumbBuffer || undefined,
-        contextInfo: ctx,
-      },
-      { quoted: m }
-    )
-  } catch (e) {
-    await client.sendMessage(
-      m.chat,
-      {
-        video: { url: dl },
-        mimetype: 'video/mp4',
-        fileName: finalTitle + '.mp4',
-        ptv: false,
-        jpegThumbnail: thumbBuffer || undefined,
-        contextInfo: ctx,
-      },
-      { quoted: m }
-    )
-  }
+  await client.sendMessage(
+    m.chat,
+    {
+      video: { url: dl },
+      mimetype: 'video/mp4',
+      fileName: finalTitle + '.mp4',
+      ptv: false,
+      jpegThumbnail: thumbBuffer || undefined,
+      contextInfo: ctx,
+    },
+    { quoted: m }
+  )
 }
 
 export default {
