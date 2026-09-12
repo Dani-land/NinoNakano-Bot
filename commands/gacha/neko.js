@@ -13,7 +13,7 @@ export default {
     var text = ctx.text
 
     try {
-      await m.reply('⏳ Buscando tu neko aleatoria...')
+      await m.reply('*𖧷* 𝐁𝐮𝐬𝐜𝐚𝐧𝐝𝐨 𝐭𝐮 𝐧𝐞𝐤𝐨 𝐚𝐥𝐞𝐚𝐭𝐨𝐫𝐢𝐚...')
 
       var res = await fetch(NYXDL_NEKO, {
         headers: {
@@ -33,7 +33,7 @@ export default {
 
       await client.sendMessage(m.chat, {
         image: { url: fullImageUrl },
-        caption: 'Aquí tienes tu neko aleatoria ⊂⁠(⁠(⁠・⁠▽⁠・⁠)⁠)⁠⊃'
+        caption: '᯽ 𝙰𝚚𝚞𝚒 𝚝𝚒𝚎𝚗𝚎𝚜 𝚝𝚞 𝚗𝚎𝚔𝚘 𝚊𝚕𝚎𝚊𝚝𝚘𝚛𝚒𝚊 ⊂⁠(⁠(⁠・⁠▽⁠・⁠)⁠)⁠⊃'
       }, { quoted: m })
 
     } catch (e) {
