@@ -3,15 +3,17 @@ import fetch from 'node-fetch'
 import sharp from 'sharp'
 
 const limit = 300
-const NYXDL_API_KEY = 'nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
-const NYXDL_AUDIO = 'https://nyxdlapi.vercel.app/api/downloads/youtube'
-const NYXDL_VIDEO = 'https://nyxdlapi.vercel.app/api/downloads/youtube/mp4'
+const DVYER_API_KEY = 'dvyer2008'
+const DVYER_BASE = 'https://dv-yer-api.online'
+const DVYER_AUDIO = 'https://dv-yer-api.online/ytmp3'
+const DVYER_VIDEO = 'https://dv-yer-api.online/ytmp4'
 
 const NEWSLETTER_JID = '120363420575743790@newsletter'
-const NEWSLETTER_NAME = '𖣘 ᑎIᑎO ᗯᗩ 𖣘'
+const NEWSLETTER_NAME = '✰ Hatsune Miku / Wa'
 
 const HEADERS = {
-  'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+  'user-agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
 }
 
 function isYTUrl(u) {
@@ -24,6 +26,7 @@ function abs(u) {
   if (!s) return null
   if (/^https?:\/\//i.test(s)) return s
   if (s.indexOf('//') === 0) return 'https:' + s
+  if (s.charAt(0) === '/') return DVYER_BASE + s
   return null
 }
 
@@ -43,42 +46,49 @@ function extractVideoId(url) {
   try {
     var full = url.indexOf('http') === 0 ? url : 'https://' + url
     var u = new URL(full)
-    if (u.hostname.indexOf('youtu.be') !== -1) return u.pathname.replace('/', '').split('/')[0]
+    if (u.hostname.indexOf('youtu.be') !== -1) {
+      return u.pathname.replace('/', '').split('/')[0]
+    }
     return u.searchParams.get('v') || null
   } catch (e) {
     return null
   }
 }
 
-function formatDuration(sec) {
-  if (sec == null || sec === '') return null
-  if (typeof sec === 'string' && sec.indexOf(':') !== -1) return sec
-  var n = Number(sec)
-  if (Number.isNaN(n)) return String(sec)
-  var m = Math.floor(n / 60)
-  var s = Math.floor(n % 60)
-  return m + ':' + (s < 10 ? '0' : '') + s
-}
-
-async function callNyxdl(endpoint, ytUrl) {
+async function callDvyer(endpoint, ytUrl, extra) {
+  extra = extra || {}
   var clean = abs(ytUrl)
-  if (!clean) clean = 'https://' + String(ytUrl).trim()
+  if (!clean) {
+    if (ytUrl && String(ytUrl).indexOf('http') === 0) clean = String(ytUrl).trim()
+    else if (ytUrl) clean = 'https://' + String(ytUrl).trim()
+  }
+  if (!clean || !/^https?:\/\//i.test(clean)) {
+    throw new Error('URL de YouTube inválida: ' + ytUrl)
+  }
 
   var apiUrl =
     endpoint +
     '?url=' +
     encodeURIComponent(clean) +
-    '&apikey=' +
-    encodeURIComponent(NYXDL_API_KEY)
+    '&mode=link&apikey=' +
+    encodeURIComponent(DVYER_API_KEY)
 
-  console.log('[NYXDL]', apiUrl)
+  if (extra.quality) {
+    apiUrl += '&quality=' + encodeURIComponent(extra.quality)
+  }
+
+  console.log('[dv-yer] GET', apiUrl)
 
   var lastErr = null
   for (var i = 1; i <= 2; i++) {
     try {
       var controller = typeof AbortController !== 'undefined' ? new AbortController() : null
       var timer = null
-      if (controller) timer = setTimeout(() => controller.abort(), 90000)
+      if (controller) {
+        timer = setTimeout(function () {
+          controller.abort()
+        }, 90000)
+      }
 
       var res = await fetch(apiUrl, {
         headers: { accept: 'application/json', 'user-agent': HEADERS['user-agent'] },
@@ -88,118 +98,146 @@ async function callNyxdl(endpoint, ytUrl) {
       if (timer) clearTimeout(timer)
 
       var text = await res.text()
-      if (!res.ok) throw new Error('NyxDL HTTP ' + res.status + ': ' + text.slice(0, 180))
+      if (!res.ok) throw new Error('dv-yer HTTP ' + res.status + ': ' + text.slice(0, 180))
 
-      var data = JSON.parse(text)
+      var data
+      try {
+        data = JSON.parse(text)
+      } catch (e) {
+        throw new Error('dv-yer no devolvió JSON: ' + text.slice(0, 180))
+      }
 
-      // NyxDL mete todo dentro de "result", no al nivel superior del JSON.
-      var r = (data && data.result) || {}
       var dl =
-        r.download_url ||
-        r.download ||
-        r.url ||
-        (r.datos && r.datos.url) ||
-        (r.descarga && r.descarga.url)
+        abs(data && data.download_url) ||
+        abs(data && data.stream_url) ||
+        abs(data && data.url) ||
+        abs(data && data.download_url_full) ||
+        abs(data && data.stream_url_full)
 
-      if (!data || !data.status || !dl) {
-        throw new Error((data && data.message) || 'NyxDL no devolvió link')
+      if (!data || data.ok !== true || !dl) {
+        throw new Error((data && data.message) || 'dv-yer no devolvió link de descarga.')
       }
 
       return {
         dl: dl,
-        title: r.title || r.titulo || 'Sin título',
+        title: data.title || 'Sin título',
+        duration: data.duration_seconds || data.duration || null,
+        quality: data.quality || null,
+        size: data.size || null,
+        format: data.format || null,
+        mime: data.mime_type || null,
+        thumbnail: abs(data.thumbnail) || null,
       }
     } catch (e) {
       lastErr = e
-      console.log('[NyxDL] intento ' + i + ' falló:', e.message)
-      if (i < 2) await new Promise(r => setTimeout(r, 2000))
+      console.log('[dv-yer] intento ' + i + ' falló:', e.message)
+      if (i < 2 && /ETIMEDOUT|timeout|aborted|ECONNRESET|ENOTFOUND|network/i.test(e.message)) {
+        await new Promise(function (r) {
+          setTimeout(r, 2000)
+        })
+        continue
+      }
+      break
     }
   }
-  throw new Error('No se pudo conectar con NyxDL.\nDetalle: ' + ((lastErr && lastErr.message) || 'error'))
-}
 
-async function getThumbBuffer(videoInfo) {
-  var thumbSrc = abs(videoInfo && videoInfo.thumbnail)
-  if (!thumbSrc) return null
-  try {
-    var tr = await fetch(thumbSrc, { headers: HEADERS })
-    if (!tr.ok) return null
-    var buf = Buffer.from(await tr.arrayBuffer())
-    return await sharp(buf).resize(500, 281).jpeg({ quality: 85 }).toBuffer()
-  } catch (e) {
-    return null
-  }
-}
-
-function buildInfoText(title, videoInfo, isAudio, asDocument) {
-  var lines = ['❁ *' + (title || 'YouTube') + '*', '']
-  var dur = videoInfo && (videoInfo.timestamp || videoInfo.duration)
-  if (dur) lines.push('> ⌗» 𝙳𝚞𝚛𝚊𝚌𝚒𝚘𝚗 › ' + formatDuration(dur))
-  if (videoInfo && videoInfo.views != null) {
-    lines.push('> ⌗» 𝚅𝚒𝚜𝚝𝚊𝚜 › ' + Number(videoInfo.views).toLocaleString())
-  }
-  if (videoInfo && videoInfo.author && videoInfo.author.name) {
-    lines.push('> ⌗» 𝙲𝚊𝚗𝚊𝚕 › ' + videoInfo.author.name)
-  }
-  if (videoInfo && videoInfo.ago) lines.push('> ⌗» 𝙿𝚞𝚋𝚕𝚒𝚌𝚊𝚍𝚘 › ' + videoInfo.ago)
-  lines.push('')
-  lines.push(
-    isAudio
-      ? asDocument ? '✐ Enviando audio (documento)...' : '❀ ᴇɴᴠɪᴀɴᴅᴏ ᴀᴜᴅɪᴏ...'
-      : asDocument ? '✐ Enviando video (documento)...' : '✿︎ ᴇɴᴠɪᴀɴᴅᴏ ᴠɪᴅᴇᴏ...'
+  throw new Error(
+    'No se pudo conectar con la API.\nDetalle: ' + ((lastErr && lastErr.message) || 'error')
   )
-  return lines.join('\n')
 }
 
-async function sendMediaOnly(opts) {
+async function sendResult(opts) {
   var client = opts.client
   var m = opts.m
   var url = opts.url
   var title = opts.title
+  var videoInfo = opts.videoInfo
   var isAudio = opts.isAudio
   var asDocument = opts.asDocument
-  var thumbBuffer = opts.thumbBuffer
 
   var result = isAudio
-    ? await callNyxdl(NYXDL_AUDIO, url)
-    : await callNyxdl(NYXDL_VIDEO, url)
+    ? await callDvyer(DVYER_AUDIO, url, {})
+    : await callDvyer(DVYER_VIDEO, url, { quality: '360p' })
 
   var finalTitle = result.title || title || 'archivo'
   var dl = abs(result.dl)
-  if (!dl) throw new Error('Link de descarga vacío')
+  if (!dl) throw new Error('Link de descarga vacío o inválido')
 
+  console.log('[dv-yer] download =', dl)
+
+  var thumbBuffer = null
+  var thumbSrc = result.thumbnail || abs(videoInfo && videoInfo.thumbnail)
+  if (thumbSrc) {
+    try {
+      var tr = await fetch(thumbSrc, { headers: HEADERS })
+      if (tr.ok) {
+        var buf = Buffer.from(await tr.arrayBuffer())
+        thumbBuffer = await sharp(buf).resize(500, 281).jpeg({ quality: 85 }).toBuffer()
+      }
+    } catch (e) {
+      console.log('thumb fail:', e.message)
+    }
+  }
+
+  var lines = ['✿ *' + finalTitle + '*', '']
+  if (result.duration || (videoInfo && (videoInfo.timestamp || videoInfo.duration))) {
+    lines.push(
+      '⌗» 𝙳𝚞𝚛𝚊𝚌𝚒𝚘𝚗 › ' + (result.duration || videoInfo.timestamp || videoInfo.duration)
+    )
+  }
+  if (videoInfo && videoInfo.views != null) {
+    lines.push('⌗» 𝚅𝚒𝚜𝚝𝚊𝚜 › ' + Number(videoInfo.views).toLocaleString())
+  }
+  if (videoInfo && videoInfo.author && videoInfo.author.name) {
+    lines.push('⌗» 𝙲𝚊𝚗𝚊𝚕 › ' + videoInfo.author.name)
+  }
+  if (videoInfo && videoInfo.ago) lines.push('⌗» 𝙿𝚞𝚋𝚕𝚒𝚌𝚊𝚍𝚘 › ' + videoInfo.ago)
+  if (result.quality) lines.push('⌗» 𝙲𝚊𝚕𝚒𝚍𝚊𝚍 › ' + result.quality)
+  if (result.size) lines.push('⌗» 𝚃𝚊𝚖𝚊𝚗̃𝚘 › ' + result.size)
+  lines.push('')
+  lines.push(isAudio ? '❁ ᗴᑎᐯIᗩᑎᗪO ᗩᑌᗪIO...' : '𑁍 ᗴᑎᐯIᗩᑎᗪO ᐯIᗪᗴO...')
+
+  var infoText = lines.join('\n')
   var ctx = newsletterContext()
 
+  if (thumbBuffer) {
+    await client.sendMessage(
+      m.chat,
+      { image: thumbBuffer, caption: infoText, contextInfo: ctx },
+      { quoted: m }
+    )
+  } else {
+    await client.sendMessage(
+      m.chat,
+      { text: infoText, contextInfo: ctx },
+      { quoted: m }
+    )
+  }
+
   if (isAudio) {
+    var audioMime = result.mime || 'audio/mp4'
+    var ext = /mpeg|mp3/i.test(audioMime) ? '.mp3' : '.m4a'
     var audioMsg = {
-      mimetype: 'audio/mpeg',
-      fileName: finalTitle + '.mp3',
+      mimetype: audioMime,
+      fileName: finalTitle + ext,
       contextInfo: ctx,
     }
     if (asDocument) audioMsg.document = { url: dl }
     else audioMsg.audio = { url: dl }
+
     await client.sendMessage(m.chat, audioMsg, { quoted: m })
     return
   }
 
-  // Video: la URL que da la API a veces redirige (302) a otra URL final.
-  // Baileys no sigue esa redirección solo, así que la resolvemos nosotros
-  // antes de mandarla (con un HEAD que sí sigue redirects).
-  var finalDl = dl
   var asDoc = asDocument
-  try {
-    var head = await fetch(dl, { method: 'HEAD', headers: HEADERS, redirect: 'follow' })
-    if (head.url) finalDl = head.url
-    var len = head.headers.get('content-length')
-    var mb = len ? parseInt(len, 10) / (1024 * 1024) : 0
-    if (!asDoc && mb >= limit) asDoc = true
-  } catch (e) {
-    // Si el HEAD falla, probamos igual con un GET que sí sigue redirects.
+  if (!asDoc) {
     try {
-      var getRes = await fetch(dl, { method: 'GET', headers: HEADERS, redirect: 'follow' })
-      if (getRes.url) finalDl = getRes.url
-    } catch (e2) {
-      // Nos quedamos con la URL original si ninguna resolución funcionó.
+      var head = await fetch(dl, { method: 'HEAD', headers: HEADERS })
+      var len = head.headers.get('content-length')
+      var mb = len ? parseInt(len, 10) / (1024 * 1024) : 0
+      if (mb >= limit) asDoc = true
+    } catch (e) {
+      asDoc = true
     }
   }
 
@@ -207,7 +245,7 @@ async function sendMediaOnly(opts) {
     await client.sendMessage(
       m.chat,
       {
-        document: { url: finalDl },
+        document: { url: dl },
         fileName: finalTitle + '.mp4',
         mimetype: 'video/mp4',
         contextInfo: ctx,
@@ -217,24 +255,53 @@ async function sendMediaOnly(opts) {
     return
   }
 
-  await client.sendMessage(
-    m.chat,
-    {
-      video: { url: finalDl },
-      mimetype: 'video/mp4',
-      fileName: finalTitle + '.mp4',
-      ptv: false,
-      jpegThumbnail: thumbBuffer || undefined,
-      contextInfo: ctx,
-    },
-    { quoted: m }
-  )
+  try {
+    var vres = await fetch(dl, { headers: HEADERS, redirect: 'follow' })
+    if (!vres.ok) throw new Error('HTTP ' + vres.status)
+    var vbuf = Buffer.from(await vres.arrayBuffer())
+    if (vbuf.length < 10000) throw new Error('archivo muy pequeño')
+
+    await client.sendMessage(
+      m.chat,
+      {
+        video: vbuf,
+        mimetype: 'video/mp4',
+        fileName: finalTitle + '.mp4',
+        ptv: false,
+        jpegThumbnail: thumbBuffer || undefined,
+        contextInfo: ctx,
+      },
+      { quoted: m }
+    )
+  } catch (e) {
+    console.log('video buffer fail, URL directa:', e.message)
+    await client.sendMessage(
+      m.chat,
+      {
+        video: { url: dl },
+        mimetype: 'video/mp4',
+        fileName: finalTitle + '.mp4',
+        ptv: false,
+        jpegThumbnail: thumbBuffer || undefined,
+        contextInfo: ctx,
+      },
+      { quoted: m }
+    )
+  }
 }
 
 export default {
   command: [
-    'play', 'mp3', 'playaudio', 'playdoc', 'ytmp3', 'play2',
-    'mp4', 'mp4doc', 'playvideo', 'ytmp4',
+    'play',
+    'mp3',
+    'playaudio',
+    'playdoc',
+    'ytmp3',
+    'play2',
+    'mp4',
+    'mp4doc',
+    'playvideo',
+    'ytmp4',
   ],
   category: 'downloader',
 
@@ -246,7 +313,7 @@ export default {
 
     try {
       if (!text || !String(text).trim()) {
-        return client.reply(m.chat, '✐ Ingresa un nombre o URL de YouTube.', m)
+        return client.reply(m.chat, '𖣘 Ingresa un nombre o URL de YouTube.', m)
       }
 
       var isAudio = ['play', 'mp3', 'playaudio', 'ytmp3', 'playdoc', 'play2'].indexOf(command) !== -1
@@ -281,38 +348,18 @@ export default {
         return m.reply('✘ No pude obtener una URL válida de YouTube.')
       }
 
-      var thumbBuffer = await getThumbBuffer(videoInfo)
-      var infoText = buildInfoText(title, videoInfo, isAudio, asDocument)
-      var ctx2 = newsletterContext()
-
-      if (thumbBuffer) {
-        await client.sendMessage(
-          m.chat,
-          { image: thumbBuffer, caption: infoText, contextInfo: ctx2 },
-          { quoted: m }
-        )
-      } else {
-        await client.sendMessage(m.chat, { text: infoText, contextInfo: ctx2 }, { quoted: m })
-      }
-
-      await sendMediaOnly({
+      await sendResult({
         client: client,
         m: m,
         url: url,
         title: title,
+        videoInfo: videoInfo,
         isAudio: isAudio,
         asDocument: asDocument,
-        thumbBuffer: thumbBuffer,
       })
     } catch (e) {
-      console.error('[play] ERROR COMPLETO:', e)
-      var detalle =
-        (e && e.message) ||
-        (e && e.output && e.output.payload && e.output.payload.message) ||
-        (typeof e === 'string' ? e : null) ||
-        JSON.stringify(e) ||
-        'Error desconocido (revisa la consola del bot)'
-      m.reply('✘ Error detectado.\n\n⌗» ' + detalle)
+      console.error('[play]', e)
+      m.reply('✘ Error detectado.\n\n⌗» ' + e.message)
     }
   },
 }
