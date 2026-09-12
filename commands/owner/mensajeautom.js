@@ -9,6 +9,44 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+async function sendToAllGroupsOf(sock, text, label) {
+  let groups
+  try {
+    groups = await sock.groupFetchAllParticipating()
+  } catch (e) {
+    console.log(`[infoatodos] error obteniendo grupos de ${label}:`, e.message)
+    return { sent: 0, failed: 0, total: 0 }
+  }
+
+  const groupIds = Object.keys(groups)
+  let sent = 0
+  let failed = 0
+
+  for (const groupId of groupIds) {
+    try {
+      const group = groups[groupId]
+      const participants = (group.participants || []).map((p) => p.id)
+
+      const caption = `✿ Mensaje automático ✿\n\n${text}`
+
+      await sock.sendMessage(groupId, {
+        text: caption,
+        mentions: participants,
+      })
+
+      sent++
+    } catch (e) {
+      console.log(`[infoatodos] falló en ${groupId} (${label}):`, e.message)
+      failed++
+    }
+
+    // Pausa entre envíos para no saturar / evitar baneo por spam
+    await sleep(2000)
+  }
+
+  return { sent, failed, total: groupIds.length }
+}
+
 export default {
   command: ['infoatodos'],
   category: 'owner',
@@ -22,50 +60,33 @@ export default {
       return m.reply('✐ Escribe el mensaje que quieres enviar a todos los grupos.\n\n› Ejemplo: *#infoatodos Hola, ¿cómo están?*')
     }
 
-    let groups
-    try {
-      groups = await client.groupFetchAllParticipating()
-    } catch (e) {
-      console.log('[infoatodos] error obteniendo grupos:', e.message)
-      return m.reply('✘ No se pudo obtener la lista de grupos.')
+    const subBots = Array.isArray(global.conns) ? global.conns : []
+
+    await m.reply(
+      `✐ Enviando mensaje al bot principal${subBots.length ? ` y a *${subBots.length}* sub-bot(s)` : ''}, espera...`
+    )
+
+    let totalSent = 0
+    let totalFailed = 0
+    let totalGroups = 0
+
+    const principal = await sendToAllGroupsOf(client, text, 'principal')
+    totalSent += principal.sent
+    totalFailed += principal.failed
+    totalGroups += principal.total
+
+    for (const sock of subBots) {
+      const label = sock.userId || 'sub-bot'
+      const res = await sendToAllGroupsOf(sock, text, label)
+      totalSent += res.sent
+      totalFailed += res.failed
+      totalGroups += res.total
     }
 
-    const groupIds = Object.keys(groups)
-
-    if (!groupIds.length) {
-      return m.reply('✘ El bot no está en ningún grupo.')
-    }
-
-    await m.reply(`✐ Enviando mensaje a *${groupIds.length}* grupos, espera...`)
-
-    let sent = 0
-    let failed = 0
-
-    for (const groupId of groupIds) {
-      try {
-        const group = groups[groupId]
-        const participants = (group.participants || []).map((p) => p.id)
-
-        const caption = `✿ Mensaje automático ✿\n\n${text}`
-
-        await client.sendMessage(
-          groupId,
-          {
-            text: caption,
-            mentions: participants,
-          }
-        )
-
-        sent++
-      } catch (e) {
-        console.log(`[infoatodos] falló en ${groupId}:`, e.message)
-        failed++
-      }
-
-      // Pausa entre envíos para no saturar / evitar baneo por spam
-      await sleep(2000)
-    }
-
-    await m.reply(`✔ Mensaje enviado a *${sent}* grupos.${failed ? `\n✘ Falló en *${failed}* grupos.` : ''}`)
+    await m.reply(
+      `✔ Mensaje enviado a *${totalSent}* de *${totalGroups}* grupos` +
+      ` (bot principal + ${subBots.length} sub-bot(s)).` +
+      (totalFailed ? `\n✘ Falló en *${totalFailed}* grupos.` : '')
+    )
   },
 }
