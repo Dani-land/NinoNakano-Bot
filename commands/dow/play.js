@@ -9,7 +9,7 @@ const DVYER_AUDIO = 'https://dv-yer-api.online/ytmp3'
 const DVYER_VIDEO = 'https://dv-yer-api.online/ytmp4'
 
 const NEWSLETTER_JID = '120363420575743790@newsletter'
-const NEWSLETTER_NAME = '✰ Hatsune Miku / Wa'
+const NEWSLETTER_NAME = 'ℕ𝕚𝕟𝕠 𝕨𝕒𝕓𝕠𝕥 ❣︎'
 
 const HEADERS = {
   'user-agent':
