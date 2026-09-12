@@ -27,7 +27,7 @@ async function sendToAllGroupsOf(sock, text, label) {
       const group = groups[groupId]
       const participants = (group.participants || []).map((p) => p.id)
 
-      const caption = `✿ Mensaje automático ✿\n\n${text}`
+      const caption = `߷ ᗰᗴᑎՏᗩᒍᗴ ᗩᑌTOᗰᗩTIᑕO ᗪᗴᒪ ᑕᖇᗴᗩᗪOᖇ ߷\n\n${text}`
 
       await sock.sendMessage(groupId, {
         text: caption,
