@@ -9,8 +9,8 @@ export default {
       const user = global.db.data.users[m.sender]
       const user2 = global.db.data.chats[m.chat].users[m.sender]
 
-      const text1 = user.metadatos || '✦ Nino Nakano Bot'
-      const text2 = user.metadatos2 || `Usuario: @${user.name}`
+      const text1 = user.metadatos || '☾︎❤︎☽︎ 𝐍𝐈𝐍𝐎 𝐍𝐀𝐊𝐀𝐍𝐎 𝐖𝐀𝐁𝐎𝐓'
+      const text2 = user.metadatos2 || `𝚂𝚝𝚒𝚌𝚔𝚎𝚛 𝚙𝚎𝚍𝚒𝚍𝚘 𝚙𝚘𝚛: @${user.name}`
 
       const q = m.quoted || m
       const mime = (q.msg || q).mimetype || ''
