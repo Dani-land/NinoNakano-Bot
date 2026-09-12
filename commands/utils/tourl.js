@@ -30,7 +30,7 @@ export default {
     try {
       const botId = ((client.user?.id || client.user?.jid || '').split(':')[0] || '') + '@s.whatsapp.net'
       const botSettings = global.db?.data?.settings?.[botId] || {}
-      const botname = botSettings.namebot2 || 'Miku Wabot'
+      const botname = botSettings.namebot2 || '𝙽𝚒𝚗𝚘 𝚠𝚊'
 
       const prefix = usedPrefix || '.'
       const q = m.quoted || m
@@ -49,7 +49,7 @@ export default {
       if (!isMedia) {
         return client.reply(
           m.chat,
-          '✘ Solo se permiten imágenes, videos y audios compatibles.',
+          '❀ Solo se permiten imágenes, videos y audios compatibles.',
           m
         )
       }
@@ -95,20 +95,20 @@ export default {
       }
 
       const txt = `
-✿ Enlace Generado ✿
+ꨄ︎ Enlace Generado ꨄ︎
 
-꒰୨୧꒱ Tipo › ${mime}
-꒰୨୧꒱ Tamaño › ${formatBytes(media.length || 0)}
-꒰୨୧꒱ API usada › ${apiUsed}
-꒰୨୧꒱ Expira › Nunca
+꒰୨୧꒱ 𝐓𝐢𝐩𝐨 › ${mime}
+꒰୨୧꒱ 𝐓𝐚𝐦𝐚𝐧̃𝐨 › ${formatBytes(media.length || 0)}
+꒰୨୧꒱ 𝐀𝐩𝐢 𝐮𝐬𝐚𝐝𝐚 › ${apiUsed}
+꒰୨୧꒱ 𝐄𝐱𝐩𝐢𝐫𝐚𝐜𝐢𝐨𝐧 › Nunca
 
-❀ URL
+❀ 𝑈𝑅𝐿
 ${link}
 
-❀ URL Corta
+❀ 𝑈𝑅𝐿 𝐶𝑜𝑟𝑡𝑎
 ${shortLink}
 
-☕︎ ${botname}
+߷ ${botname}
 `.trim()
 
       if (img) {
