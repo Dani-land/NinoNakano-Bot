@@ -9,7 +9,7 @@ const DVYER_AUDIO = 'https://dv-yer-api.online/ytmp3'
 const DVYER_VIDEO = 'https://dv-yer-api.online/ytmp4'
 
 const NEWSLETTER_JID = '120363420575743790@newsletter'
-const NEWSLETTER_NAME = 'ℕ𝕚𝕟𝕠 𝕨𝕒𝕓𝕠𝕥 ❣︎'
+const NEWSLETTER_NAME = '𝙽𝚒𝚗𝚘 𝙽𝚊𝚔𝚊𝚗𝚘'
 
 const HEADERS = {
   'user-agent':
@@ -297,8 +297,8 @@ export default {
     'playaudio',
     'playdoc',
     'ytmp3',
-    'play2',
     'mp4',
+    'play2',
     'mp4doc',
     'playvideo',
     'ytmp4',
@@ -316,7 +316,7 @@ export default {
         return client.reply(m.chat, '𖣘 Ingresa un nombre o URL de YouTube.', m)
       }
 
-      var isAudio = ['play', 'mp3', 'playaudio', 'ytmp3', 'playdoc', 'play2'].indexOf(command) !== -1
+      var isAudio = ['play', 'mp3', 'playaudio', 'ytmp3', 'playdoc'].indexOf(command) !== -1
       var asDocument = ['playdoc', 'mp4doc'].indexOf(command) !== -1
 
       var url
