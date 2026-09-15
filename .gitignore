@@ -1,7 +1,0 @@
-node_modules/
-Sessions/
-backups/
-lib/datos.db
-lib/datos.db-shm
-lib/datos.db-wal
-.env
