@@ -9,7 +9,7 @@ const DVYER_AUDIO = 'https://dv-yer-api.online/ytmp3'
 const DVYER_VIDEO = 'https://dv-yer-api.online/ytmp4'
 
 const NEWSLETTER_JID = '120363420575743790@newsletter'
-const NEWSLETTER_NAME = '𝙽𝚒𝚗𝚘 𝙽𝚊𝚔𝚊𝚗𝚘'
+const NEWSLETTER_NAME = 'Nιησ Pʀσʝєᴄтѕ'
 
 const HEADERS = {
   'user-agent':
