@@ -9,7 +9,7 @@ const groupMetadataCache = new Map()
 const groupMetadataRequests = new Map()
 
 const CHANNEL_JID = '120363420575743790@newsletter'
-const CHANNEL_NAME = 'ミ★ 𝙉𝙞𝙣𝙤 𝙐𝙥𝙙𝙖𝙩𝙚𝙨 ★彡'
+const CHANNEL_NAME = '❁ N͜͡i͜͡n͜͡o͜͡ N͜͡a͜͡k͜͡a͜͡n͜͡o͜͡ w͜͡a͜͡b͜͡o͜͡t͜͡'
 
 function buildChannelForwardContext(mentionJid, authorJid) {
     return {
@@ -102,9 +102,9 @@ export const participantsUpdate = async (client, anu) => {
 
 ❀ Usuario › @${phone}
 ꕤ Grupo › ${metadata.subject}
-✿ Miembros › ${memberCount}
+𖨆 Miembros › ${memberCount}
 
-ꕤ Esperamos que disfrutes tu estancia.
+❤︎ Esᴘᴇʀᴇᴍᴏs ᴅɪsғʀᴜᴛᴇs ᴛᴜ ᴇsᴛᴀɴᴄɪᴀ.
 
 > Usa *#menu* para descubrir todas las funciones disponibles.`
                 await client.sendMessage(anu.id, {
@@ -116,14 +116,14 @@ export const participantsUpdate = async (client, anu) => {
             }
 
             if ((anu.action === 'remove' || anu.action === 'leave') && chat?.welcome && isPrimary) {
-                const caption = `ꕥ Un miembro se ha despedido
+                const caption = `(ᗒᗣᗕ)՞ Un miembro se ha despedido
 
 ❀ Usuario › @${phone}
 ꕤ Integrantes › ${memberCount}
 
-꒰୨୧꒱ Te deseamos lo mejor.
+☁︎ ᴛᴇ ᴅᴇsᴇᴀᴍᴏs ʟᴏ ᴍᴇᴊᴏʀ.
 
-> Las puertas siempre estarán abiertas para tu regreso.`
+> ☹︎ 𝙴𝚜𝚙𝚎𝚛𝚎𝚖𝚘𝚜 𝚢 𝚟𝚞𝚎𝚕𝚟𝚊𝚜.`
                 await client.sendMessage(anu.id, {
                     image: { url: pp },
                     caption: caption,
