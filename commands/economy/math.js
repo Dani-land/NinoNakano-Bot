@@ -1,5 +1,14 @@
 import fs from 'fs';
-import { normalizeJid, sameJid } from '../../lib/utils.js'
+
+// Funciones locales (antes venían de '../../lib/utils.js', que no existe en
+// este proyecto — ese import roto era lo que hacía que el bot ni cargara
+// este plugin).
+function normalizeJid(jid = '') {
+  return jid.replace(/:\d+/, '').split('@')[0] + '@s.whatsapp.net'
+}
+function sameJid(a = '', b = '') {
+  return normalizeJid(a) === normalizeJid(b)
+}
 
 global.math = global.math || {};
 
@@ -121,7 +130,7 @@ async function run({ client, m, args, command, usedPrefix }) {
     return;
   }
 
-  if (command === 'math') {
+  if (command === 'math' || command === 'matematicas') {
 
     if (juego?.juegoActivo) {
       return client.reply(
@@ -188,6 +197,6 @@ Responde usando:
 
 export default {
   command: ['math', 'matematicas', 'responder'],
-  category: 'rpg',
+  category: 'economy',
   run
 };
