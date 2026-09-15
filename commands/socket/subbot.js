@@ -18,7 +18,7 @@ export default {
     if (new Date() - global.db.data.users[m.sender].Subs < 120000) {
       return client.reply(
         m.chat,
-        `✦ Debes esperar *${msToTime(time - new Date())}* para volver a vincular un socket.`,
+        `𓆉︎ Debes esperar *${msToTime(time - new Date())}* para volver a vincular un socket.`,
         m,
       );
     }
@@ -37,7 +37,7 @@ export default {
     if (subsCount >= maxSubs) {
       return client.reply(
         m.chat,
-`✦ No hay espacios disponibles para registrar más Sub-Bots.
+`✿︎ No hay espacios disponibles para registrar más Sub-Bots.
 
 ✎ Límite actual:
 > ${maxSubs} sockets`,
@@ -67,7 +67,7 @@ export default {
     if (!rawPhone || rawPhone.length < 7) {
       return client.reply(
         m.chat,
-`✦ Ese número no parece válido.
+`☏︎ Ese número no parece válido.
 
 ✎ Uso: *${usedPrefix || '.'}code [tu número]*
 > Ejemplo: *${usedPrefix || '.'}code 5219876543210*`,
@@ -78,7 +78,7 @@ export default {
     const phone = normalizePhone(rawPhone);
 
     const rtx =
-`✦ Vincula tu cuenta usando el código de conexión.
+`𖧷 Vincula tu cuenta usando el código de conexión.
 
 ✐ Sigue estos pasos:
 > • Abre los 3 puntos de WhatsApp
@@ -86,7 +86,7 @@ export default {
 > • Pulsa "Vincular dispositivo"
 > • Selecciona "Vincular con número"
 
-✎ Importante:
+߷ 𝐈𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭𝐞:
 > El código solo funcionará con el número que lo solicitó.`;
 
     const isCode = /^(code)$/.test(command);
