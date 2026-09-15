@@ -61,16 +61,14 @@ Usa **siempre** la librería oficial de Baileys. Nada de forks, nada de mods, na
 <details>
 <summary><strong>🍒 Cloud</strong> — Shell</summary>
 
+> Cada bloque de código es un paso independiente y tiene su propio botón **Copiar**.
+
 ```bash
 git clone https://github.com/Dani-land/NinoNakano-Bot
 ```
 
 ```bash
 cd NinoNakano-Bot
-```
-
-```bash
-yarn install
 ```
 
 ```bash
@@ -84,14 +82,31 @@ npm start
 </details>
 
 <details>
-<summary><strong>🍒 Termux</strong> — Manualmente</summary>
+<summary><strong>🍒 Termux</strong> — Node.js 21+</summary>
+
+> Ejecuta los bloques en orden. No uses `apt`: Termux utiliza `pkg`.
+> Cada bloque es independiente y tiene su propio botón **Copiar**.
 
 ```bash
 termux-setup-storage
 ```
+
 ```bash
-apt update && apt upgrade && pkg install -y git nodejs ffmpeg imagemagick yarn
+pkg update -y && pkg upgrade -y
 ```
+
+```bash
+pkg install -y git nodejs ffmpeg imagemagick
+```
+
+```bash
+node -v
+```
+
+> El bot necesita Node.js 21.7.3 o superior. Si `node -v` muestra una versión menor,
+> vuelve a ejecutar `pkg update -y && pkg upgrade -y` y después `pkg install -y nodejs`.
+> Termux instala la versión actual disponible del repositorio, que normalmente es
+> superior a Node 21.
 
 ```bash
 git clone https://github.com/Dani-land/NinoNakano-Bot
@@ -102,10 +117,6 @@ cd NinoNakano-Bot
 ```
 
 ```bash
-yarn install
-```
-
-```bash
 npm install
 ```
 
@@ -113,37 +124,50 @@ npm install
 npm start
 ```
 
-> *Si aparece **(Y/I/N/O/D/Z) [default=N] ?** usa la letra **"y"** y luego **"ENTER"** para continuar con la instalación.*
+> `npm start` comprueba automáticamente la versión de Node antes de abrir el bot.
+> En el primer inicio elige QR o código de 8 dígitos y sigue las instrucciones de WhatsApp.
 
 </details>
 
 <details>
 <summary><strong>🍒 Mantén tu bot vivo 24/7</strong> — PM2</summary>
 
-> *Ejecuta esto dentro de la carpeta MIKUWABOT y olvídate de que se apague*
+> *Ejecuta esto dentro de la carpeta `NinoNakano-Bot` para mantenerlo activo*
 ```bash
-termux-wake-lock && npm i -g pm2 && pm2 start index.js && pm2 save && pm2 logs 
+termux-wake-lock
+```
+```bash
+npm i -g pm2
+```
+```bash
+pm2 start index.js --name nino-nakano
+```
+```bash
+pm2 save
+```
+```bash
+pm2 logs nino-nakano
 ``` 
 
 #### Opciones útiles
 > *Borra todo el historial guardado en PM2:*
 ```bash 
-pm2 delete index
+pm2 delete nino-nakano
 ``` 
 
 > *Vuelve a ver los logs en vivo:*
 ```bash 
-pm2 logs 
+pm2 logs nino-nakano
 ``` 
 
 > *Detén el bot sin perder la configuración:*
 ```bash 
-pm2 stop index
+pm2 stop nino-nakano
 ``` 
 
 > *Enciéndelo de nuevo:*
 ```bash 
-pm2 start index
+pm2 start nino-nakano
 ```
 
 --- 
@@ -151,15 +175,21 @@ pm2 start index
 ### 🔄 Si el bot se detiene
 > _Se fue la luz, se cerró Termux o reiniciaste el celular. No pasa nada, solo corre esto:_
 ```bash
-cd && cd NinoNakano-Bot && npm start
+cd ~/NinoNakano-Bot
+```
+```bash
+npm start
 ```
 ---
 
 ### 🔑 ¿Necesitas iniciar sesión de nuevo?
 > *Detén el bot (ctrl + "z" + ENTER) hasta ver algo verde parecido a `NinoNakano-Bot $`, luego:*
  
-```bash 
-cd && cd NinoNakano-Bot && rm -rf Sessions/Owner && npm start
+```bash
+rm -rf Sessions/Owner
+```
+```bash
+npm start
 ```
 </details>
 

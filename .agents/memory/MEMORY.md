@@ -1,0 +1,1 @@
+- [Dependency firewall compatibility](package-install.md) — update direct scraper dependencies when old transitive archives are blocked.

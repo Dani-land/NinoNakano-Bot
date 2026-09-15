@@ -31,9 +31,9 @@ export default {
                  `> ❀︎ Enlace › *${song.url}*\n\n` +
                  `${dev}`;
 
-    await conn.sendMessage(m.chat, { image: { url: data.image }, caption: info }, { quoted: m });
+    await client.sendMessage(m.chat, { image: { url: data.image }, caption: info }, { quoted: m });
 
-    await conn.sendMessage(m.chat, {
+    await client.sendMessage(m.chat, {
       audio: { url: data.download },
       ptt: true,
       fileName: `${data.title}.mp3`,

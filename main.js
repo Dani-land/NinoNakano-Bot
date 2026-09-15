@@ -41,9 +41,10 @@ async function cachedResolveLid(jid, client, chat) {
     return resolved
 }
 
-loadCommandsAndPlugins()
+const commandsReady = loadCommandsAndPlugins()
 
 export default async (client, m) => {
+    await commandsReady
     if (!m.message) return
 
     await antiStatus(client, m)
@@ -142,8 +143,15 @@ export default async (client, m) => {
         m.message.buttonsResponseMessage?.selectedButtonId ||
         m.message.listResponseMessage?.singleSelectReply?.selectedRowId ||
         m.message.templateButtonReplyMessage?.selectedId ||
-        (m.message.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson &&
-            JSON.parse(m.message.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson).id) ||
+        (() => {
+            const paramsJson = m.message?.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson
+            if (!paramsJson) return ''
+            try {
+                return JSON.parse(paramsJson)?.id || ''
+            } catch {
+                return ''
+            }
+        })() ||
         ""
 
     initDB(m, client)
@@ -294,7 +302,7 @@ export default async (client, m) => {
         return base ? `${base}@s.whatsapp.net` : null
     }
 
-    const modsJids = global.mods.map(num => normalizeToJid(num))
+    const modsJids = (global.mods || []).map(num => normalizeToJid(num)).filter(Boolean)
     const isModeration = modsJids.includes(senderJid)
 
     global.dfail = (type, m) => {

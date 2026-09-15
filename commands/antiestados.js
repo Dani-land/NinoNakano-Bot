@@ -42,7 +42,7 @@ export default async (client, m) => {
 
     const userName = m.pushName || 'Usuario'
 
-    await client.reply(m.chat, `ꕥ *${userName}* ha sido expulsado. Prohibido mencionar estados en este grupo.`, null)
+    await m.reply(`ꕥ *${userName}* ha sido expulsado. Prohibido mencionar estados en este grupo.`)
 
     setTimeout(async () => {
       await client.groupParticipantsUpdate(m.chat, [m.sender], 'remove')

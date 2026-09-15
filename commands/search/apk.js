@@ -134,7 +134,8 @@ export default {
 
       const preview = results
         .map((app, i) => {
-          return `\( {NUM_EMOJI[i] || ` \){i + 1}.`} *\( {app.name}*\n     _ \){app.version} · ${app.size}_`
+          const number = NUM_EMOJI[i] || `${i + 1}.`
+          return `${number} *${app.name}*\n     _${app.version} · ${app.size}_`
         })
         .join('\n\n')
 

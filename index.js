@@ -240,6 +240,17 @@ const realizarLimpieza = () => {
 
 let LOGIN_METHOD = null
 let cleanupInterval = null
+let reconnectTimer = null
+
+function scheduleReconnect(reason = '') {
+  if (reconnectTimer) return
+  if (reason) log.warning(`${reason} Reintentando en 3 segundos...`)
+
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null
+    startBot().catch((err) => showFatalError(err, 'RECONNECT ERROR'))
+  }, 3000)
+}
 
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState(global.sessionName)
@@ -278,8 +289,14 @@ async function startBot() {
         chalk.yellowBright('Ejemplo: +57301XXXXXXX\n')
       )
 
-      const fixed = await question(chalk.magentaBright('➤ Número: '))
-      const phoneNumber = normalizePhoneForPairing(fixed)
+      let phoneNumber = ''
+      while (!phoneNumber) {
+        const fixed = await question(chalk.magentaBright('➤ Número: '))
+        phoneNumber = normalizePhoneForPairing(fixed)
+        if (!phoneNumber) {
+          log.warn('Escribe un número válido con código de país, por ejemplo: 5219876543210')
+        }
+      }
 
       try {
         const pairing = await clientt.requestPairingCode(phoneNumber)
@@ -313,20 +330,15 @@ async function startBot() {
       const reason = lastDisconnect?.error?.output?.statusCode || 0
 
       if (reason === DisconnectReason.connectionLost) {
-        log.warning("Se perdió la conexión al servidor, intento reconectarme..")
-        startBot()
+        scheduleReconnect("Se perdió la conexión al servidor.")
       } else if (reason === DisconnectReason.connectionClosed) {
-        log.warning("Conexión cerrada, intentando reconectarse...")
-        startBot()
+        scheduleReconnect("Conexión cerrada.")
       } else if (reason === DisconnectReason.restartRequired) {
-        log.warning("Es necesario reiniciar..")
-        startBot()
+        scheduleReconnect("Es necesario reiniciar la conexión.")
       } else if (reason === DisconnectReason.timedOut) {
-        log.warning("Tiempo de conexión agotado, intentando reconectarse...")
-        startBot()
+        scheduleReconnect("Tiempo de conexión agotado.")
       } else if (reason === DisconnectReason.badSession) {
-        log.warning("Eliminar sesión y escanear nuevamente...")
-        startBot()
+        scheduleReconnect("La sesión necesita reconectarse.")
       } else if (reason === DisconnectReason.connectionReplaced) {
         log.warning("Primero cierre la sesión actual...")
       } else if (reason === DisconnectReason.loggedOut) {
@@ -343,7 +355,7 @@ async function startBot() {
         process.exit(0)
       } else {
         clientt.end(`Motivo de desconexión desconocido : ${reason}|${connection}`)
-        startBot()
+        scheduleReconnect("Motivo de desconexión desconocido.")
       }
     }
 
@@ -383,28 +395,29 @@ async function startBot() {
 
     if (receivedPendingNotifications === true) {
       log.warn("Por favor espere aproximadamente 1 minuto...")
-      clientt.ev.flush()
+      clientt.ev.flush?.()
     }
   })
 
-  clientt.ev.on("messages.upsert", async ({ messages }) => {
-    try {
-      let m = messages[0]
-      if (!m.message) return
+  clientt.ev.on("messages.upsert", async ({ messages, type }) => {
+    for (const rawMessage of messages) {
+      try {
+        if (!rawMessage.message) continue
 
-      m.message =
-        Object.keys(m.message)[0] === "ephemeralMessage"
-          ? m.message.ephemeralMessage.message
-          : m.message
+        rawMessage.message =
+          Object.keys(rawMessage.message)[0] === "ephemeralMessage"
+            ? rawMessage.message.ephemeralMessage.message
+            : rawMessage.message
 
-      if (m.key && m.key.remoteJid === "status@broadcast") return
-      if (!clientt.public && !m.key.fromMe && messages.type === "notify") return
-      if (m.key.id.startsWith("BAE5") && m.key.id.length === 16) return
+        if (rawMessage.key?.remoteJid === "status@broadcast") continue
+        if (!clientt.public && !rawMessage.key?.fromMe && type === "notify") continue
+        if (rawMessage.key?.id?.startsWith("BAE5") && rawMessage.key.id.length === 16) continue
 
-      m = await smsg(clientt, m)
-      handler(clientt, m, messages)
-    } catch (err) {
-      console.log(err)
+        const message = await smsg(clientt, rawMessage)
+        await handler(clientt, message, messages)
+      } catch (err) {
+        log.error(`Error procesando mensaje: ${err?.message || err}`)
+      }
     }
   })
 
@@ -464,8 +477,13 @@ export function patchSendMessage(client) {
   client.sendMessage = (jid, content, options = {}) => {
     return new Promise((resolve, reject) => {
       enqueue(async () => {
-        const res = await original(jid, content, options)
-        resolve(res)
+        try {
+          const res = await original(jid, content, options)
+          resolve(res)
+        } catch (error) {
+          reject(error)
+          throw error
+        }
       })
     })
   }

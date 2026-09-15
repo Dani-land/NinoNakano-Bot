@@ -10,7 +10,7 @@ export default {
             (args[0]?.match(/^\d+$/) ? args[0] + '@s.whatsapp.net' : null);
 
     /*    if (!mentionedJid) {
-            conn.reply(m.chat, 'Uso correcto:\n/removerpj @usuario <nombre del personaje>\n/removerpj <número> <nombre del personaje>', m);
+            client.reply(m.chat, 'Uso correcto:\n/removerpj @usuario <nombre del personaje>\n/removerpj <número> <nombre del personaje>', m);
             return;
         }*/
 
