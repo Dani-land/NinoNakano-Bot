@@ -16,7 +16,7 @@ export default {
       }
 
       let packname = 'Sticker Pack'
-      let author = m.pushName || 'Miku Wabot'
+      let author = m.pushName || 'Nino Nakano'
 
       if (text) {
         if (text.includes('|')) {
@@ -51,7 +51,7 @@ export default {
 
       await client.sendMessage(m.chat, {
         react: {
-          text: '✨',
+          text: '⭐',
           key: m.key
         }
       })
