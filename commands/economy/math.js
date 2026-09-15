@@ -66,7 +66,7 @@ async function run({ client, m, args, command, usedPrefix }) {
     if (!respuestaUsuario) {
       return client.reply(
         chatId,
-        `✦ Escribe una respuesta válida.\n\nEjemplo:\n> *${prefa}responder 42*`,
+        `❃ Escribe una respuesta válida.\n\nEjemplo:\n> *${prefa}responder 42*`,
         m
       );
     }
@@ -91,7 +91,7 @@ async function run({ client, m, args, command, usedPrefix }) {
 
         return client.reply(
           chatId,
-          `✦ ¡Respuesta correcta!\n\n> Ganaste *${expaleatorio} Exp* ✨`,
+          `✣ ¡Respuesta correcta!\n\n> Ganaste *${expaleatorio} Exp* ✨`,
           m
         );
 
@@ -106,7 +106,7 @@ async function run({ client, m, args, command, usedPrefix }) {
 
           return client.reply(
             chatId,
-            `✦ Te quedaste sin intentos.\n> Inténtalo nuevamente más tarde.`,
+            `〄 Te quedaste sin intentos.\n> Inténtalo nuevamente más tarde.`,
             m
           );
 
@@ -117,7 +117,7 @@ async function run({ client, m, args, command, usedPrefix }) {
 
           return client.reply(
             chatId,
-            `✦ Respuesta incorrecta.\n> Intentos restantes: *${intentosRestantes}*`,
+            `〄 Respuesta incorrecta.\n> Intentos restantes: *${intentosRestantes}*`,
             m
           );
         }
@@ -132,7 +132,7 @@ async function run({ client, m, args, command, usedPrefix }) {
     if (juego?.juegoActivo) {
       return client.reply(
         chatId,
-        `✦ Ya hay una partida activa en este grupo.`,
+        `ꕤ Ya hay una partida activa en este grupo.`,
         m
       );
     }
@@ -142,7 +142,7 @@ async function run({ client, m, args, command, usedPrefix }) {
     if (!limits[dificultad]) {
       return client.reply(
         chatId,
-        `✦ Elige una dificultad válida:\n\n> facil\n> medio\n> dificil\n> imposible\n> imposible2`,
+        `〄 Elige una dificultad válida:\n\n> facil\n> medio\n> dificil\n> imposible\n> imposible2`,
         m
       );
     }
@@ -152,7 +152,7 @@ async function run({ client, m, args, command, usedPrefix }) {
 
     const problemMessage = await client.reply(
       chatId,
-      `✦ Desafío Matemático ✦
+      `❀ Desafío Matemático ❀
 
 > Dificultad: *${dificultad}*
 > Tiempo límite: *1 minuto*
