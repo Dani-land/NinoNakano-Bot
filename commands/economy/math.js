@@ -1,8 +1,5 @@
 import fs from 'fs';
 
-// Funciones locales (antes venían de '../../lib/utils.js', que no existe en
-// este proyecto — ese import roto era lo que hacía que el bot ni cargara
-// este plugin).
 function normalizeJid(jid = '') {
   return jid.replace(/:\d+/, '').split('@')[0] + '@s.whatsapp.net'
 }
