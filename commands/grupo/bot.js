@@ -6,7 +6,7 @@ export default {
     const chat = global.db.data.chats[m.chat]
     const estado = chat.bannedGrupo ?? false
 
-    if (args[0] === 'off', 'banchat') {
+    if (args[0] === 'off' || args[0] === 'banchat') {
       if (estado) return m.reply('《✧》 El *Bot* ya estaba *desactivado* en este grupo.')
       chat.bannedGrupo = true
       return m.reply(`『✐』 Has *Desactivado* a *${global.db.data.settings[client.user.id.split(':')[0] + "@s.whatsapp.net"].namebot2}* en este grupo.`)
@@ -19,7 +19,7 @@ export default {
     }
 
     return m.reply(
-      `*✿ Estado de ${global.db.data.settings[client.user.id.split(':')[0] + "@s.whatsapp.net"].namebot2} (⁠•⁠‿⁠•⁠)*\nꕥ *Actual ›* ${estado ? '✗ Desactivado' : '✓ Activado'}\n\n✎ Puedes cambiarlo con:\n> ● _Activar ›_ *bot on*\n> ● _Desactivar ›_ *bot off*`,
+      `*✿ Estado de ${global.db.data.settings[client.user.id.split(':')[0] + "@s.whatsapp.net"].namebot2} (⁠•⁠‿⁠•⁠)*\nꕥ *Actual ›* ${estado ? '✗ Desactivado' : '✓ Activado'}\n\n✎ Puedes cambiarlo con:\n> ● _Activar ›_ *bot on*\n> ● _Desactivar ›_ *bot off* o *bot banchat*`,
     )
   },
 };
