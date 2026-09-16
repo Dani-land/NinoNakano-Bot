@@ -6,7 +6,7 @@ export default {
     const chat = global.db.data.chats[m.chat]
     const estado = chat.bannedGrupo ?? false
 
-    if (args[0] === 'off') {
+    if (args[0] === 'off', 'banchat') {
       if (estado) return m.reply('《✧》 El *Bot* ya estaba *desactivado* en este grupo.')
       chat.bannedGrupo = true
       return m.reply(`『✐』 Has *Desactivado* a *${global.db.data.settings[client.user.id.split(':')[0] + "@s.whatsapp.net"].namebot2}* en este grupo.`)
