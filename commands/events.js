@@ -35,8 +35,18 @@ function cleanDisplayName(value) {
         .slice(0, 80)
 }
 
+function escapeXml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;')
+}
+
 async function getParticipantName(client, participant, jid, phone) {
     const contact = client.contacts?.[jid] || {}
+    const storedUser = global.db?.data?.users?.[jid] || {}
     const knownName = [
         participant.notify,
         participant.name,
@@ -44,6 +54,7 @@ async function getParticipantName(client, participant, jid, phone) {
         contact.name,
         contact.notify,
         contact.verifiedName,
+        storedUser.name,
     ]
         .map(cleanDisplayName)
         .find((name) => name && name !== phone && !/^\+?[\d\s()-]+$/.test(name))
@@ -72,7 +83,7 @@ async function downloadProfilePicture(client, jid) {
     }
 }
 
-async function renderEventImage(client, template, jid) {
+async function renderEventImage(client, template, jid, displayName) {
     let templateBuffer
     try {
         templateBuffer = await fs.promises.readFile(template.file)
@@ -82,23 +93,40 @@ async function renderEventImage(client, template, jid) {
     }
 
     const profilePicture = await downloadProfilePicture(client, jid)
-    if (!profilePicture) return templateBuffer
+    const layers = []
 
     try {
-        const { left, top, size } = template.avatar
-        const circleMask = Buffer.from(
-            `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
-            `<circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#fff"/>` +
+        if (profilePicture) {
+            const { left, top, size } = template.avatar
+            const circleMask = Buffer.from(
+                `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
+                `<circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#fff"/>` +
+                `</svg>`,
+            )
+            const avatar = await sharp(profilePicture)
+                .resize(size, size, { fit: 'cover' })
+                .composite([{ input: circleMask, blend: 'dest-in' }])
+                .png()
+                .toBuffer()
+
+            layers.push({ input: avatar, left, top })
+        }
+
+        const name = escapeXml(`@${cleanDisplayName(displayName) || 'usuario'}`)
+        const titleOverlay = Buffer.from(
+            `<svg width="1254" height="1254" viewBox="0 0 1254 1254">` +
+            // Oculta el texto fijo "@user" de la plantilla antes de escribir el nombre real.
+            `<rect x="245" y="165" width="770" height="155" rx="68" fill="#e8f7fb"/>` +
+            `<text x="630" y="295" text-anchor="middle" font-family="Arial, sans-serif" ` +
+            `font-size="120" font-weight="900" textLength="700" lengthAdjust="spacingAndGlyphs" ` +
+            `fill="#20a9e8" stroke="#fff" stroke-width="20" paint-order="stroke" ` +
+            `stroke-linejoin="round">${name}</text>` +
             `</svg>`,
         )
-        const avatar = await sharp(profilePicture)
-            .resize(size, size, { fit: 'cover' })
-            .composite([{ input: circleMask, blend: 'dest-in' }])
-            .png()
-            .toBuffer()
+        layers.push({ input: titleOverlay, left: 0, top: 0 })
 
         return await sharp(templateBuffer)
-            .composite([{ input: avatar, left, top }])
+            .composite(layers)
             .png()
             .toBuffer()
     } catch (error) {
@@ -194,10 +222,10 @@ export const participantsUpdate = async (client, anu) => {
             const displayName = await getParticipantName(client, participant, mentionJid, phone)
 
             if (anu.action === 'add' && chat?.welcome && isPrimary) {
-                const image = await renderEventImage(client, EVENT_TEMPLATES.welcome, mentionJid)
+                const image = await renderEventImage(client, EVENT_TEMPLATES.welcome, mentionJid, displayName)
                 const caption = `ᰔᩚ Bienvenido ${displayName}
 
-❀ Usuario › @${displayName}
+❀ Usuario › @${phone}
 ꕤ Grupo › ${metadata.subject}
 𖨆 Miembros › ${memberCount}
 
@@ -212,10 +240,10 @@ export const participantsUpdate = async (client, anu) => {
             }
 
             if ((anu.action === 'remove' || anu.action === 'leave') && chat?.welcome && isPrimary) {
-                const image = await renderEventImage(client, EVENT_TEMPLATES.goodbye, mentionJid)
+                const image = await renderEventImage(client, EVENT_TEMPLATES.goodbye, mentionJid, displayName)
                 const caption = `(ᗒᗣᗕ)՞ Adiós ${displayName}
 
-❀ Usuario › @${displayName}
+❀ Usuario › @${phone}
 ꕤ Integrantes › ${memberCount}
 
 ☁︎ ᴛᴇ ᴅᴇsᴇᴀᴍᴏs ʟᴏ ᴍᴇᴊᴏʀ.
