@@ -1,1 +1,0 @@
-- [Imágenes dinámicas de eventos](event-image-rendering.md) — las plantillas con texto fijo deben recibir una capa SVG dinámica y no devolver silenciosamente la plantilla original si falla el avatar.
