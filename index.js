@@ -278,6 +278,11 @@ async function startBot() {
 
   patchSendMessage(clientt)
   global.client = clientt
+  // El bot principal debe procesar mensajes de otros números.
+  // El modo privado se controla por settings.self en main.js; dejar
+  // esta propiedad indefinida hace que el filtro de messages.upsert
+  // descarte todos los mensajes que no son fromMe.
+  clientt.public = true
   clientt.isInit = false
   clientt.ev.on("creds.update", saveCreds)
 
