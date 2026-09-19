@@ -1,4 +1,7 @@
 import chalk from 'chalk'
+import fs from 'fs'
+import path from 'path'
+import sharp from 'sharp'
 import {
     resolveLidToRealJid,
     normalizeJid,
@@ -10,6 +13,99 @@ const groupMetadataRequests = new Map()
 
 const CHANNEL_JID = '120363420575743790@newsletter'
 const CHANNEL_NAME = '❁ N͜͡i͜͡n͜͡o͜͡ N͜͡a͜͡k͜͡a͜͡n͜͡o͜͡ w͜͡a͜͡b͜͡o͜͡t͜͡'
+const MEDIA_DIR = path.join(process.cwd(), 'lib', 'media')
+const EVENT_TEMPLATES = {
+    welcome: {
+        file: path.join(MEDIA_DIR, 'welcome.png'),
+        // Posición del círculo de avatar en la plantilla de bienvenida.
+        avatar: { left: 963, top: 394, size: 194 },
+    },
+    goodbye: {
+        file: path.join(MEDIA_DIR, 'goodbye.png'),
+        // Posición del círculo de avatar en la plantilla de despedida.
+        avatar: { left: 963, top: 423, size: 194 },
+    },
+}
+
+function cleanDisplayName(value) {
+    return String(value || '')
+        .replace(/^@+/, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 80)
+}
+
+async function getParticipantName(client, participant, jid, phone) {
+    const contact = client.contacts?.[jid] || {}
+    const knownName = [
+        participant.notify,
+        participant.name,
+        participant.pushName,
+        contact.name,
+        contact.notify,
+        contact.verifiedName,
+    ]
+        .map(cleanDisplayName)
+        .find((name) => name && name !== phone && !/^\+?[\d\s()-]+$/.test(name))
+
+    if (knownName) return knownName
+
+    if (typeof client.getName === 'function') {
+        try {
+            const name = cleanDisplayName(await client.getName(jid, true))
+            if (name && name !== phone) return name
+        } catch {}
+    }
+
+    return phone || 'usuario'
+}
+
+async function downloadProfilePicture(client, jid) {
+    try {
+        const url = await client.profilePictureUrl(jid, 'image')
+        if (!url) return null
+        const response = await fetch(url)
+        if (!response.ok) return null
+        return Buffer.from(await response.arrayBuffer())
+    } catch {
+        return null
+    }
+}
+
+async function renderEventImage(client, template, jid) {
+    let templateBuffer
+    try {
+        templateBuffer = await fs.promises.readFile(template.file)
+    } catch (error) {
+        console.error(`[ EVENT IMAGE ERROR ] No se encontró ${template.file}:`, error.message)
+        return null
+    }
+
+    const profilePicture = await downloadProfilePicture(client, jid)
+    if (!profilePicture) return templateBuffer
+
+    try {
+        const { left, top, size } = template.avatar
+        const circleMask = Buffer.from(
+            `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
+            `<circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#fff"/>` +
+            `</svg>`,
+        )
+        const avatar = await sharp(profilePicture)
+            .resize(size, size, { fit: 'cover' })
+            .composite([{ input: circleMask, blend: 'dest-in' }])
+            .png()
+            .toBuffer()
+
+        return await sharp(templateBuffer)
+            .composite([{ input: avatar, left, top }])
+            .png()
+            .toBuffer()
+    } catch (error) {
+        console.error('[ EVENT IMAGE ERROR ] No se pudo colocar el avatar:', error.message)
+        return templateBuffer
+    }
+}
 
 function buildChannelForwardContext(mentionJid, authorJid) {
     return {
@@ -95,12 +191,13 @@ export const participantsUpdate = async (client, anu) => {
 
             const mentionJid = jid || originalJid
             const phone = mentionJid.split('@')[0]
-            const pp = await client.profilePictureUrl(jid, 'image').catch(_ => 'https://d0mwa043ankuvadx.public.blob.vercel-storage.com/nyx/gyvbym4.jpg')
+            const displayName = await getParticipantName(client, participant, mentionJid, phone)
 
             if (anu.action === 'add' && chat?.welcome && isPrimary) {
+                const image = await renderEventImage(client, EVENT_TEMPLATES.welcome, mentionJid)
                 const caption = `ᰔᩚ Bienvenido
 
-❀ Usuario › @${phone}
+❀ Usuario › @${displayName}
 ꕤ Grupo › ${metadata.subject}
 𖨆 Miembros › ${memberCount}
 
@@ -108,25 +205,24 @@ export const participantsUpdate = async (client, anu) => {
 
 > Usa *#menu* para descubrir todas las funciones disponibles.`
                 await client.sendMessage(anu.id, {
-                    image: { url: pp },
-                    caption: caption,
+                    ...(image ? { image, caption } : { text: caption }),
                     mentions: [mentionJid],
                     ...buildChannelForwardContext(mentionJid, anu.author),
                 })
             }
 
             if ((anu.action === 'remove' || anu.action === 'leave') && chat?.welcome && isPrimary) {
+                const image = await renderEventImage(client, EVENT_TEMPLATES.goodbye, mentionJid)
                 const caption = `(ᗒᗣᗕ)՞ Un miembro se ha despedido
 
-❀ Usuario › @${phone}
+❀ Usuario › @${displayName}
 ꕤ Integrantes › ${memberCount}
 
 ☁︎ ᴛᴇ ᴅᴇsᴇᴀᴍᴏs ʟᴏ ᴍᴇᴊᴏʀ.
 
 > ☹︎ 𝙴𝚜𝚙𝚎𝚛𝚎𝚖𝚘𝚜 𝚢 𝚟𝚞𝚎𝚕𝚟𝚊𝚜.`
                 await client.sendMessage(anu.id, {
-                    image: { url: pp },
-                    caption: caption,
+                    ...(image ? { image, caption } : { text: caption }),
                     mentions: [mentionJid],
                     ...buildChannelForwardContext(mentionJid, anu.author),
                 })
