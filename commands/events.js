@@ -195,7 +195,7 @@ export const participantsUpdate = async (client, anu) => {
 
             if (anu.action === 'add' && chat?.welcome && isPrimary) {
                 const image = await renderEventImage(client, EVENT_TEMPLATES.welcome, mentionJid)
-                const caption = `ᰔᩚ Bienvenido
+                const caption = `ᰔᩚ Bienvenido ${displayName}
 
 ❀ Usuario › @${displayName}
 ꕤ Grupo › ${metadata.subject}
@@ -213,7 +213,7 @@ export const participantsUpdate = async (client, anu) => {
 
             if ((anu.action === 'remove' || anu.action === 'leave') && chat?.welcome && isPrimary) {
                 const image = await renderEventImage(client, EVENT_TEMPLATES.goodbye, mentionJid)
-                const caption = `(ᗒᗣᗕ)՞ Un miembro se ha despedido
+                const caption = `(ᗒᗣᗕ)՞ Adiós ${displayName}
 
 ❀ Usuario › @${displayName}
 ꕤ Integrantes › ${memberCount}
