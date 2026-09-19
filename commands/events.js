@@ -96,34 +96,40 @@ async function renderEventImage(client, template, jid, displayName) {
     const layers = []
 
     try {
-        if (profilePicture) {
-            const { left, top, size } = template.avatar
-            const circleMask = Buffer.from(
-                `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
-                `<circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#fff"/>` +
-                `</svg>`,
-            )
-            const avatar = await sharp(profilePicture)
-                .resize(size, size, { fit: 'cover' })
-                .composite([{ input: circleMask, blend: 'dest-in' }])
-                .png()
-                .toBuffer()
-
-            layers.push({ input: avatar, left, top })
-        }
-
-        const name = escapeXml(`@${cleanDisplayName(displayName) || 'usuario'}`)
+        const nameText = `@${cleanDisplayName(displayName) || 'usuario'}`
+        const name = escapeXml(nameText)
+        const fontSize = Math.max(64, Math.min(120, Math.floor(840 / Math.max(nameText.length, 1))))
         const titleOverlay = Buffer.from(
-            `<svg width="1254" height="1254" viewBox="0 0 1254 1254">` +
+            `<svg xmlns="http://www.w3.org/2000/svg" width="1254" height="1254" viewBox="0 0 1254 1254">` +
             // Oculta el texto fijo "@user" de la plantilla antes de escribir el nombre real.
             `<rect x="245" y="165" width="770" height="155" rx="68" fill="#e8f7fb"/>` +
-            `<text x="630" y="295" text-anchor="middle" font-family="Arial, sans-serif" ` +
-            `font-size="120" font-weight="900" textLength="700" lengthAdjust="spacingAndGlyphs" ` +
+            `<text x="630" y="295" text-anchor="middle" font-family="sans-serif" ` +
+            `font-size="${fontSize}" font-weight="900" ` +
             `fill="#20a9e8" stroke="#fff" stroke-width="20" paint-order="stroke" ` +
             `stroke-linejoin="round">${name}</text>` +
             `</svg>`,
         )
         layers.push({ input: titleOverlay, left: 0, top: 0 })
+
+        if (profilePicture) {
+            try {
+                const { left, top, size } = template.avatar
+                const circleMask = Buffer.from(
+                    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
+                    `<circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#fff"/>` +
+                    `</svg>`,
+                )
+                const avatar = await sharp(profilePicture)
+                    .resize(size, size, { fit: 'cover' })
+                    .composite([{ input: circleMask, blend: 'dest-in' }])
+                    .png()
+                    .toBuffer()
+
+                layers.push({ input: avatar, left, top })
+            } catch (error) {
+                console.error('[ EVENT IMAGE ERROR ] No se pudo colocar el avatar:', error.message)
+            }
+        }
 
         return await sharp(templateBuffer)
             .composite(layers)
