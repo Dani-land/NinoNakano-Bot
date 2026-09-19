@@ -1,6 +1,7 @@
 node_modules/
 Sessions/
 backups/
+.nino-update-*/
 lib/datos.db
 lib/datos.db-shm
 lib/datos.db-wal

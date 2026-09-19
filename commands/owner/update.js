@@ -1,5 +1,4 @@
 import fs from 'fs'
-import os from 'os'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { execFile } from 'child_process'
@@ -35,7 +34,9 @@ async function getTrackedChanges() {
 }
 
 function protectRuntimeFiles() {
-  const temporaryDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nino-update-'))
+  // /tmp puede estar montado en otro dispositivo en Replit. Mantener el
+  // temporal dentro del proyecto permite que renameSync sea atómico.
+  const temporaryDir = fs.mkdtempSync(path.join(process.cwd(), '.nino-update-'))
   const moved = []
 
   for (const relativeFile of runtimeFiles) {
