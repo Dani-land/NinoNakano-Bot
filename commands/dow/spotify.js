@@ -2,6 +2,21 @@ import fetch from 'node-fetch';
 
 const DLAPIXY_SPOTIFY = 'https://dlapixy.vercel.app/api/downloads/spotify'
 
+const NEWSLETTER_JID = '120363420575743790@newsletter'
+const NEWSLETTER_NAME = 'Nιησ Pʀσʝєᴄтѕ'
+
+function newsletterContext() {
+  return {
+    forwardingScore: 999,
+    isForwarded: true,
+    forwardedNewsletterMessageInfo: {
+      newsletterJid: NEWSLETTER_JID,
+      newsletterName: NEWSLETTER_NAME,
+      serverMessageId: -1,
+    },
+  }
+}
+
 export default {
   command: ['spotify'],
   category: 'downloader',
@@ -42,17 +57,22 @@ export default {
                  `> ❀︎ Fuente › *${text}*\n\n` +
                  `${dev}`;
 
+    const ctx = newsletterContext()
+
     if (data.thumbnail) {
-      await client.sendMessage(m.chat, { image: { url: data.thumbnail }, caption: info }, { quoted: m });
+      await client.sendMessage(m.chat, { image: { url: data.thumbnail }, caption: info, contextInfo: ctx }, { quoted: m });
     } else {
-      await client.sendMessage(m.chat, { text: info }, { quoted: m });
+      await client.sendMessage(m.chat, { text: info, contextInfo: ctx }, { quoted: m });
     }
 
+    // Audio normal (no nota de voz): ptt:true esperaba formato OGG/Opus y
+    // rompía la reproducción de los mp3 que da esta API.
     await client.sendMessage(m.chat, {
       audio: { url: downloadUrl },
-      ptt: true,
+      ptt: false,
       fileName: `${data.title}.mp3`,
-      mimetype: file.mimeType || 'audio/mpeg'
+      mimetype: file.mimeType || 'audio/mpeg',
+      contextInfo: ctx,
     }, { quoted: m });
 
   } catch (e) {
