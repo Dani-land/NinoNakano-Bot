@@ -3,10 +3,9 @@ import fetch from 'node-fetch'
 import sharp from 'sharp'
 
 const limit = 300
-const DVYER_API_KEY = 'dvyer2008'
-const DVYER_BASE = 'https://dv-yer-api.online'
-const DVYER_AUDIO = 'https://dv-yer-api.online/ytmp3'
-const DVYER_VIDEO = 'https://dv-yer-api.online/ytmp4'
+const DLAPIXY_BASE = 'https://dlapixy.vercel.app'
+const DLAPIXY_AUDIO = 'https://dlapixy.vercel.app/api/downloads/youtube/audio'
+const DLAPIXY_VIDEO = 'https://dlapixy.vercel.app/api/downloads/youtube/video'
 
 const NEWSLETTER_JID = '120363420575743790@newsletter'
 const NEWSLETTER_NAME = 'Nιησ Pʀσʝєᴄтѕ'
@@ -26,7 +25,7 @@ function abs(u) {
   if (!s) return null
   if (/^https?:\/\//i.test(s)) return s
   if (s.indexOf('//') === 0) return 'https:' + s
-  if (s.charAt(0) === '/') return DVYER_BASE + s
+  if (s.charAt(0) === '/') return DLAPIXY_BASE + s
   return null
 }
 
@@ -55,7 +54,7 @@ function extractVideoId(url) {
   }
 }
 
-async function callDvyer(endpoint, ytUrl, extra) {
+async function callDlapixy(endpoint, ytUrl, extra) {
   extra = extra || {}
   var clean = abs(ytUrl)
   if (!clean) {
@@ -66,18 +65,12 @@ async function callDvyer(endpoint, ytUrl, extra) {
     throw new Error('URL de YouTube inválida: ' + ytUrl)
   }
 
-  var apiUrl =
-    endpoint +
-    '?url=' +
-    encodeURIComponent(clean) +
-    '&mode=link&apikey=' +
-    encodeURIComponent(DVYER_API_KEY)
-
+  var apiUrl = endpoint + '?url=' + encodeURIComponent(clean)
   if (extra.quality) {
     apiUrl += '&quality=' + encodeURIComponent(extra.quality)
   }
 
-  console.log('[dv-yer] GET', apiUrl)
+  console.log('[dlapixy] GET', apiUrl)
 
   var lastErr = null
   for (var i = 1; i <= 2; i++) {
@@ -98,39 +91,34 @@ async function callDvyer(endpoint, ytUrl, extra) {
       if (timer) clearTimeout(timer)
 
       var text = await res.text()
-      if (!res.ok) throw new Error('dv-yer HTTP ' + res.status + ': ' + text.slice(0, 180))
+      if (!res.ok) throw new Error('dlapixy HTTP ' + res.status + ': ' + text.slice(0, 180))
 
       var data
       try {
         data = JSON.parse(text)
       } catch (e) {
-        throw new Error('dv-yer no devolvió JSON: ' + text.slice(0, 180))
+        throw new Error('dlapixy no devolvió JSON: ' + text.slice(0, 180))
       }
 
-      var dl =
-        abs(data && data.download_url) ||
-        abs(data && data.stream_url) ||
-        abs(data && data.url) ||
-        abs(data && data.download_url_full) ||
-        abs(data && data.stream_url_full)
+      var file = Array.isArray(data && data.files) ? data.files[0] : null
+      var dl = abs(file && file.url)
 
       if (!data || data.ok !== true || !dl) {
-        throw new Error((data && data.message) || 'dv-yer no devolvió link de descarga.')
+        throw new Error((data && data.message) || 'dlapixy no devolvió link de descarga.')
       }
 
       return {
         dl: dl,
         title: data.title || 'Sin título',
-        duration: data.duration_seconds || data.duration || null,
-        quality: data.quality || null,
-        size: data.size || null,
-        format: data.format || null,
-        mime: data.mime_type || null,
+        duration: data.durationSeconds || null,
+        quality: file.quality || null,
+        format: file.format || null,
+        mime: file.mimeType || null,
         thumbnail: abs(data.thumbnail) || null,
       }
     } catch (e) {
       lastErr = e
-      console.log('[dv-yer] intento ' + i + ' falló:', e.message)
+      console.log('[dlapixy] intento ' + i + ' falló:', e.message)
       if (i < 2 && /ETIMEDOUT|timeout|aborted|ECONNRESET|ENOTFOUND|network/i.test(e.message)) {
         await new Promise(function (r) {
           setTimeout(r, 2000)
@@ -156,14 +144,14 @@ async function sendResult(opts) {
   var asDocument = opts.asDocument
 
   var result = isAudio
-    ? await callDvyer(DVYER_AUDIO, url, {})
-    : await callDvyer(DVYER_VIDEO, url, { quality: '360p' })
+    ? await callDlapixy(DLAPIXY_AUDIO, url, {})
+    : await callDlapixy(DLAPIXY_VIDEO, url, { quality: '360' })
 
   var finalTitle = result.title || title || 'archivo'
   var dl = abs(result.dl)
   if (!dl) throw new Error('Link de descarga vacío o inválido')
 
-  console.log('[dv-yer] download =', dl)
+  console.log('[dlapixy] download =', dl)
 
   var thumbBuffer = null
   var thumbSrc = result.thumbnail || abs(videoInfo && videoInfo.thumbnail)
@@ -215,7 +203,7 @@ async function sendResult(opts) {
   }
 
   if (isAudio) {
-    var audioMime = result.mime || 'audio/mp4'
+    var audioMime = result.mime || 'audio/mpeg'
     var ext = /mpeg|mp3/i.test(audioMime) ? '.mp3' : '.m4a'
     var audioMsg = {
       mimetype: audioMime,
@@ -232,12 +220,13 @@ async function sendResult(opts) {
   var asDoc = asDocument
   if (!asDoc) {
     try {
-      var head = await fetch(dl, { method: 'HEAD', headers: HEADERS })
+      var head = await fetch(dl, { method: 'HEAD', headers: HEADERS, redirect: 'follow' })
       var len = head.headers.get('content-length')
       var mb = len ? parseInt(len, 10) / (1024 * 1024) : 0
       if (mb >= limit) asDoc = true
+      if (head.url) dl = head.url
     } catch (e) {
-      asDoc = true
+      // se intenta igual con la URL original
     }
   }
 
@@ -255,39 +244,18 @@ async function sendResult(opts) {
     return
   }
 
-  try {
-    var vres = await fetch(dl, { headers: HEADERS, redirect: 'follow' })
-    if (!vres.ok) throw new Error('HTTP ' + vres.status)
-    var vbuf = Buffer.from(await vres.arrayBuffer())
-    if (vbuf.length < 10000) throw new Error('archivo muy pequeño')
-
-    await client.sendMessage(
-      m.chat,
-      {
-        video: vbuf,
-        mimetype: 'video/mp4',
-        fileName: finalTitle + '.mp4',
-        ptv: false,
-        jpegThumbnail: thumbBuffer || undefined,
-        contextInfo: ctx,
-      },
-      { quoted: m }
-    )
-  } catch (e) {
-    console.log('video buffer fail, URL directa:', e.message)
-    await client.sendMessage(
-      m.chat,
-      {
-        video: { url: dl },
-        mimetype: 'video/mp4',
-        fileName: finalTitle + '.mp4',
-        ptv: false,
-        jpegThumbnail: thumbBuffer || undefined,
-        contextInfo: ctx,
-      },
-      { quoted: m }
-    )
-  }
+  await client.sendMessage(
+    m.chat,
+    {
+      video: { url: dl },
+      mimetype: 'video/mp4',
+      fileName: finalTitle + '.mp4',
+      ptv: false,
+      jpegThumbnail: thumbBuffer || undefined,
+      contextInfo: ctx,
+    },
+    { quoted: m }
+  )
 }
 
 export default {
