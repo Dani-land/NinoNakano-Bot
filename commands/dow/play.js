@@ -65,12 +65,10 @@ async function callDlapixy(endpoint, ytUrl, extra) {
     throw new Error('URL de YouTube inválida: ' + ytUrl)
   }
 
-  var apiUrl = endpoint + '?url=' + encodeURIComponent(clean)
-  if (extra.quality) {
-    apiUrl += '&quality=' + encodeURIComponent(extra.quality)
-  }
+  var body = { url: clean }
+  if (extra.quality) body.quality = extra.quality
 
-  console.log('[dlapixy] GET', apiUrl)
+  console.log('[dlapixy] POST', endpoint, JSON.stringify(body))
 
   var lastErr = null
   for (var i = 1; i <= 2; i++) {
@@ -83,8 +81,14 @@ async function callDlapixy(endpoint, ytUrl, extra) {
         }, 90000)
       }
 
-      var res = await fetch(apiUrl, {
-        headers: { accept: 'application/json', 'user-agent': HEADERS['user-agent'] },
+      var res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+          'user-agent': HEADERS['user-agent'],
+        },
+        body: JSON.stringify(body),
         timeout: 90000,
         signal: controller ? controller.signal : undefined,
       })
