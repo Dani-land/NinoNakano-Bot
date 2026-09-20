@@ -1,4 +1,6 @@
-import axios from 'axios';
+import fetch from 'node-fetch';
+
+const DLAPIXY_SPOTIFY = 'https://dlapixy.vercel.app/api/downloads/spotify'
 
 export default {
   command: ['spotify'],
@@ -8,56 +10,53 @@ export default {
   if (!text) return m.reply(`✎ Ingresa algún término de búsqueda para buscar tu canción.`);
 
   try {
-    let song;
-    const isSpotifyUrl = text.startsWith('https://open.spotify.com/');
-    if (isSpotifyUrl) {
-      song = { url: text };
-    } else {
-      const results = await spotifyxv(text);
-      if (!results.length) return m.reply('No se encontró la canción.');
-      song = results[0];
+    const res = await fetch(DLAPIXY_SPOTIFY, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({ url: text }),
+    })
+
+    const raw = await res.text()
+
+    // DEBUG: mira en tu consola la forma real de la respuesta si algo falla
+    console.log('[spotify] HTTP', res.status, '| respuesta cruda:', raw.slice(0, 1000))
+
+    let data
+    try {
+      data = JSON.parse(raw)
+    } catch (e) {
+      return m.reply('✦ La API no devolvió una respuesta válida.')
     }
 
-    const res = await axios.get(`${api.url}/dl/spotify?url=${song.url}&key=${api.key}`);
-    const data = res.data?.data;
-    if (!data?.download) return m.reply('No se pudo obtener el enlace de descarga.');
+    if (!data?.ok || !Array.isArray(data.files) || !data.files.length) {
+      return m.reply(`✦ ${data?.message || 'No se pudo obtener resultados.'}`)
+    }
 
-    if (!data || !res.data.status) return m.reply('✦ No se pudo obtener resultados.')
+    const file = data.files[0]
+    const downloadUrl = file?.url
+    if (!downloadUrl) return m.reply('No se pudo obtener el enlace de descarga.');
 
     const info = `Descargando... *${data.title}*\n\n` +
-                 `> ✰ Artista › *${data.artist}*\n` +
-                 (song.album ? `> ✿ Álbum › *${song.album}*\n` : '') +
-                 `> ꕥ Duración › *${data.duration}*\n` +
-                 `> ❀︎ Enlace › *${song.url}*\n\n` +
+                 `> ꕥ Duración › *${data.durationSeconds ? Math.floor(data.durationSeconds / 60) + ':' + String(data.durationSeconds % 60).padStart(2, '0') : 'Desconocida'}*\n` +
+                 `> ✧ Calidad › *${file.quality || 'Desconocida'}*\n` +
+                 `> ❀︎ Fuente › *${text}*\n\n` +
                  `${dev}`;
 
-    await client.sendMessage(m.chat, { image: { url: data.image }, caption: info }, { quoted: m });
+    if (data.thumbnail) {
+      await client.sendMessage(m.chat, { image: { url: data.thumbnail }, caption: info }, { quoted: m });
+    } else {
+      await client.sendMessage(m.chat, { text: info }, { quoted: m });
+    }
 
     await client.sendMessage(m.chat, {
-      audio: { url: data.download },
+      audio: { url: downloadUrl },
       ptt: true,
       fileName: `${data.title}.mp3`,
-      mimetype: 'audio/mpeg'
+      mimetype: file.mimeType || 'audio/mpeg'
     }, { quoted: m });
 
   } catch (e) {
-    // console.error(e);
+    console.log('[spotify] ERROR:', e.message)
     await m.reply(`${msgglobal}`);
   }
 }}
-
-async function spotifyxv(query) {
-  const res = await axios.get(`${api.url}/search/spotify?query=${encodeURIComponent(query)}&key=${api.key}`);
-  if (!res.data?.status || !res.data?.data?.length) return [];
-
-  const firstTrack = res.data.data[0];
-
-  return [{
-    name: firstTrack.title,
-    artista: [firstTrack.artist],
-    album: firstTrack.album,
-    duracion: firstTrack.duration,
-    url: firstTrack.url,
-    imagen: firstTrack.image || ''
-  }];
-}
