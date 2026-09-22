@@ -1,3 +1,5 @@
+import { getGlobalEconomyUser } from '../../lib/economy.js'
+
 export default {
   command: ['buycharacter', 'buychar', 'buyc'],
   category: 'gacha',
@@ -7,6 +9,7 @@ export default {
     const userId = m.sender
     const chatData = db.chats[chatId]
     const user = chatData.users[userId]
+    const economy = getGlobalEconomyUser(userId)
     const botId = client.user.id.split(':')[0] + '@s.whatsapp.net'
     const botSettings = db.settings[botId]
     const monedas = botSettings.currency
@@ -31,17 +34,17 @@ export default {
     if (!personaje)
       return m.reply(`✎ No se encontró el personaje *${personajeNombre}* en la lista de ventas.`)
 
-    if (user.coins < personaje.precio)
+    if (economy.coins < personaje.precio)
       return m.reply(
         `ꕥ No tienes suficientes *${monedas}* para comprar *${personaje.name}*. Necesitas *¥${personaje.precio.toLocaleString()}*.`,
       )
 
-    user.coins -= personaje.precio
+    economy.coins -= personaje.precio
 
     const vendedorId = personaje.vendedor
     const vendedor = chatData.users[vendedorId]
-    //vendedor.coins ||= 0
-    vendedor.coins += personaje.precio
+    const vendedorEconomy = getGlobalEconomyUser(vendedorId)
+    vendedorEconomy.coins += personaje.precio
 
     // user.characters ||= []
     user.characters.push({ name: personaje.name, ...personaje })

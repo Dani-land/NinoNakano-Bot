@@ -1,3 +1,5 @@
+import { getGlobalEconomyUser } from '../../lib/economy.js'
+
 export default {
   command: ['slut'],
   category: 'rpg',
@@ -52,7 +54,8 @@ export default {
         }
       }
 
-      let user = global.db.data.chats[m.chat].users[m.sender]
+       let user = global.db.data.chats[m.chat].users[m.sender]
+       const economy = getGlobalEconomyUser(m.sender)
 
       if (!user.logros) user.logros = {}
       if (typeof user.logros.prostituirse !== 'number') {
@@ -104,7 +107,7 @@ export default {
           .replace('{currency}', currency)
 
         user.exp += xpGanado
-        user.coins += dulcesGanados
+         economy.coins += dulcesGanados
         user.logros.prostituirse += 1
 
         return client.reply(
@@ -125,7 +128,7 @@ export default {
           .replace('{currency}', currency)
 
         user.exp = Math.max(0, user.exp - xpPerdido)
-        user.coins = Math.max(0, user.coins - dulcesPerdidos)
+         economy.coins = Math.max(0, economy.coins - dulcesPerdidos)
 
         return client.reply(
           m.chat,

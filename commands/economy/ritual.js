@@ -1,3 +1,5 @@
+import { getGlobalEconomyUser } from '../../lib/economy.js'
+
 export default {
   command: ['ritual'],
   category: 'rpg',
@@ -13,7 +15,7 @@ export default {
     if (chat.adminonly || !chat.rpg)
       return m.reply(`✦ Los comandos de economía están desactivados en este grupo.`)
 
-    const user = chat.users[m.sender]
+    const user = getGlobalEconomyUser(m.sender)
 
     const remaining = user.ritualCooldown - Date.now()
 

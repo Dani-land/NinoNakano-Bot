@@ -1,3 +1,5 @@
+import { getGlobalEconomyUser } from '../../lib/economy.js'
+
 export default {
   command: ['mine'],
   category: 'rpg',
@@ -22,7 +24,7 @@ export default {
       )
     }
 
-    const user = chat.users[m.sender]
+    const user = getGlobalEconomyUser(m.sender)
 
     const remaining =
       user.mineCooldown - Date.now()

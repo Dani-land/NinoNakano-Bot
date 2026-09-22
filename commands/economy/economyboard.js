@@ -1,4 +1,5 @@
 import { resolveLidToRealJid } from '../../lib/utils.js'
+import { getGlobalEconomyUser } from '../../lib/economy.js'
 
 export default {
   command: ['economyboard', 'eboard', 'baltop'],
@@ -17,16 +18,12 @@ export default {
       return m.reply(`✦ Los comandos de economía están desactivados en este grupo.`)
 
     try {
-      const users = Object.entries(chatData.users || {})
-        .filter(([_, data]) => {
+      const users = Object.keys(db.users || {})
+        .map(jid => ({ jid, ...getGlobalEconomyUser(jid) }))
+        .filter(data => {
           const total = (data.coins || 0) + (data.bank || 0)
           return total >= 1000
         })
-        .map(([key, data]) => ({
-          jid: key,
-          coins: data.coins || 0,
-          bank: data.bank || 0
-        }))
 
       if (users.length === 0)
         return m.reply(`✧ Aún no hay usuarios con al menos *1,000 ${monedas}*.`)

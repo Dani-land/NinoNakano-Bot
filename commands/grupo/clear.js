@@ -13,6 +13,8 @@ function msToTime(ms) {
   return `${day}d ${hour % 24}h ${min % 60}m ${sec % 60}s`
 }
 
+import { getGlobalEconomyUser } from '../../lib/economy.js'
+
 export default {
   command: ['clear'],
   category: 'grupo',
@@ -47,7 +49,7 @@ export default {
 
         if ((isViewMode && isValidTime) || isInactive) {
           const waifus = groupData?.characters?.length || 0
-          const dinero = groupData?.coins || 0
+          const dinero = getGlobalEconomyUser(jid).coins || 0
           const displayName = global.db.data.users[jid]?.name || jid.split('@')[0]
           const formattedTime = msToTime(inactiveTime)
 
@@ -58,7 +60,6 @@ export default {
 
           if (isDeleteMode && !isViewMode && isInactive) {
             delete chat.users[jid]
-            delete global.db.data.users[jid]
             count++
           }
         }

@@ -1,3 +1,5 @@
+import { getGlobalEconomyUser } from '../../lib/economy.js'
+
 export default {
   command: ['monthly', 'mensual'],
   category: 'rpg',
@@ -25,8 +27,7 @@ export default {
       )
     }
 
-    const user =
-      chatData.users[m.sender]
+    const user = getGlobalEconomyUser(m.sender)
 
     const coins =
       pickRandom([500, 1000, 1500, 2000, 2500])

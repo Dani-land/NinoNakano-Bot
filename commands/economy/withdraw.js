@@ -1,3 +1,5 @@
+import { getGlobalEconomyUser } from '../../lib/economy.js'
+
 export default {
   command: ['withdraw', 'with'],
   category: 'rpg',
@@ -12,7 +14,7 @@ export default {
     if (chatData.adminonly || !chatData.rpg)
       return m.reply(`✦ Los comandos de economía están desactivados en este grupo.`)
 
-    const user = chatData.users[m.sender]
+    const user = getGlobalEconomyUser(m.sender)
     const currency = botSettings.currency || 'Monedas'
 
     if (!args[0])

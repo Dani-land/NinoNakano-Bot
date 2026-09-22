@@ -1,3 +1,5 @@
+import { getGlobalEconomyUser } from '../../lib/economy.js'
+
 function msToTime(duration) {
   const seconds = Math.floor((duration / 1000) % 60)
   const minutes = Math.floor((duration / (1000 * 60)) % 60)
@@ -38,6 +40,7 @@ export default {
     const botSettings = db.settings[botId]
     const monedas = botSettings.currency
     const user = chatConfig.users[userId]
+    const economy = getGlobalEconomyUser(userId)
 
     if (chatConfig.adminonly || !chatConfig.gacha)
       return m.reply(`✎ Estos comandos estan desactivados en este grupo.`)
@@ -115,7 +118,7 @@ export default {
     // chatConfig.users[userId] ||= { characters: [], characterCount: 0, totalRwcoins: 0 }
     const userData = chatConfig.users[userId]
 
-    if (user.coins < reservedCharacter.value)
+    if (economy.coins < reservedCharacter.value)
       return m.reply(
         `ꕥ No tienes suficiente *${monedas}* para comprar a *${reservedCharacter.name}*.`,
       )
@@ -137,7 +140,7 @@ export default {
       (p) => p.id !== reservedCharacter.id,
     )
     user.buyCooldown = now + 15 * 60000
-    user.coins -= reservedCharacter.value
+    economy.coins -= reservedCharacter.value
 
     const displayName = db.users[userId]?.name || userId.split('@')[0]
     delete reservedCharacter.reservedBy

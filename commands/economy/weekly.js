@@ -1,3 +1,5 @@
+import { getGlobalEconomyUser } from '../../lib/economy.js'
+
 const pickRandom = (list) => list[Math.floor(Math.random() * list.length)]
 
 const msToTime = (duration) => {
@@ -24,7 +26,7 @@ export default {
     if (chatData.adminonly || !chatData.rpg)
       return m.reply(`✦ Los comandos de economía están desactivados en este grupo.`)
 
-    const user = chatData.users[m.sender]
+    const user = getGlobalEconomyUser(m.sender)
     const cooldown = 7 * 24 * 60 * 60 * 1000
     const lastClaim = user.lastWeekly || 0
     const timeLeft = msToTime(cooldown - (Date.now() - lastClaim))

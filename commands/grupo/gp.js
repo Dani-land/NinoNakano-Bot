@@ -1,5 +1,6 @@
 import ws from 'ws';
 import fs from 'fs';
+import { getGlobalEconomyUser } from '../../lib/economy.js';
 
 export default {
   command: ['gp', 'groupinfo'],
@@ -30,7 +31,7 @@ export default {
   const user = chatUsers[fullId];
   if (user) {
     registeredUsersInGroup++;
-    totalCoins += Number(user.coins) || 0;
+    totalCoins += Number(getGlobalEconomyUser(fullId).coins) || 0;
     const personagens = Array.isArray(user.characters) ? user.characters : [];
     totalClaimedWaifus += personagens.length;
   }

@@ -1,4 +1,5 @@
 import { resolveLidToRealJid } from "../../lib/utils.js"
+import { getGlobalEconomyUser } from "../../lib/economy.js"
 
 export default {
   command: ['givecoins', 'pay', 'coinsgive'],
@@ -22,8 +23,8 @@ export default {
     if (!who2)
       return m.reply(`〔✦〕 Debes mencionar al usuario al que deseas enviar *${monedas}*.`)
 
-    const senderData = chatData.users[m.sender]
-    const targetData = chatData.users[who]
+    const senderData = getGlobalEconomyUser(m.sender)
+    const targetData = getGlobalEconomyUser(who)
 
     if (!targetData)
       return m.reply(`〔✦〕 El usuario mencionado aún no se encuentra registrado en el sistema.`)

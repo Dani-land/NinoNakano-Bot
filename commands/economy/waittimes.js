@@ -1,3 +1,5 @@
+import { getGlobalEconomyUser } from '../../lib/economy.js'
+
 export default {
   command: [
     'waittimes',
@@ -24,13 +26,7 @@ export default {
       )
     }
 
-    const user = chatData.users[m.sender]
-
-    if (!user) {
-      return m.reply(
-        `✎ No estás registrado en la economía del grupo.`
-      )
-    }
+    const user = getGlobalEconomyUser(m.sender)
 
     const now = Date.now()
     const oneDay = 24 * 60 * 60 * 1000

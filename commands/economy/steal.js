@@ -1,4 +1,5 @@
 import { resolveLidToRealJid } from "../../lib/utils.js"
+import { getGlobalEconomyUser } from "../../lib/economy.js"
 
 export default {
   command: ['steal', 'rob', 'robar'],
@@ -52,20 +53,8 @@ export default {
       )
     }
 
-    const senderData = chatData.users[m.sender]
-    const targetData = chatData.users[target]
-
-    if (!senderData) {
-      return m.reply(
-        `《✧》 No estás registrado en la economía del grupo.`
-      )
-    }
-
-    if (!targetData) {
-      return m.reply(
-        `《✧》 El usuario mencionado no está registrado en el bot.`
-      )
-    }
+    const senderData = getGlobalEconomyUser(m.sender)
+    const targetData = getGlobalEconomyUser(target)
 
     if (!senderData.roboCooldown) {
       senderData.roboCooldown = 0

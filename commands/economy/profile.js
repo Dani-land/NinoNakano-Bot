@@ -1,5 +1,6 @@
 import moment from 'moment-timezone';
 import { resolveLidToRealJid } from "../../lib/utils.js"
+import { getGlobalEconomyUser } from "../../lib/economy.js"
 
 export default {
   command: ['profile', 'perfil'],
@@ -12,7 +13,7 @@ export default {
     const chat = global.db.data.chats[m.chat] || {}
     const chatUsers = chat.users || {}
     const globalUsers = global.db.data.users || {}
-    const userss = global.db.data.chats[m.chat].users[userId] || {}
+    const userss = globalUsers[userId] || global.db.data.chats[m.chat].users[userId]
 
     if (!userss) {
       return m.reply('✦ El usuario mencionado no está registrado en el bot.')
@@ -36,8 +37,9 @@ export default {
     const pasatiempo = user2.pasatiempo ? `${user2.pasatiempo}` : 'No definido'
     const exp = user2.exp || 0
     const nivel = user2.level || 0
-    const chocolates = user.coins || 0
-    const banco = user.bank || 0
+    const economy = getGlobalEconomyUser(userId)
+    const chocolates = economy.coins || 0
+    const banco = economy.bank || 0
     const totalCoins = chocolates + banco
     const harem = user?.characters?.length || 0
 

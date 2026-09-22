@@ -1,9 +1,11 @@
+import { getGlobalEconomyUser } from '../../lib/economy.js'
+
 export default {
   command: ['daily'],
   category: 'rpg',
   run: async ({client, m}) => {
     const chat = global.db.data.chats[m.chat]
-    const user = chat.users[m.sender]
+    const user = getGlobalEconomyUser(m.sender)
     const botId = client.user.id.split(':')[0] + '@s.whatsapp.net'
     const monedas = global.db.data.settings[botId].currency
 

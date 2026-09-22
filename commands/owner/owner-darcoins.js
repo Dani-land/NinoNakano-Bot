@@ -1,3 +1,5 @@
+import { getGlobalEconomyUser } from '../../lib/economy.js'
+
 export default {
   command: ['darplata'],
   category: 'Owner',
@@ -22,7 +24,7 @@ export default {
   if (isNaN(cantidad) || cantidad <= 0)
     return m.reply(`✧ Ingresa una cantidad válida de *${monedas}*.`);
 
-    let targetUser = globalThis.db.data.chats[m.chat].users[who];
+    let targetUser = getGlobalEconomyUser(who);
   if (!targetUser)
     return m.reply(`「✎」 El usuario mencionado no está registrado en el bot.`);
 

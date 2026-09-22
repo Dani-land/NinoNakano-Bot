@@ -1,3 +1,5 @@
+import { getGlobalEconomyUser } from '../../lib/economy.js'
+
 export default {
   command: ['rt', 'roulette', 'ruleta'],
   category: 'rpg',
@@ -10,7 +12,7 @@ export default {
     if (!globalThis.db.data.chats[m.chat].rpg)
       return m.reply(`❒ La economía del grupo está en pausa.\n\n> Un administrador puede volver a activarla con:\n› *${usedPrefix}economia enable*.`);
 
-    let user = globalThis.db.data.chats[m.chat].users[m.sender]
+    let user = getGlobalEconomyUser(m.sender)
 
     if (!user.coins) user.coins = 0
     if (!user.rtCooldown) user.rtCooldown = 0

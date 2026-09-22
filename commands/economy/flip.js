@@ -1,3 +1,5 @@
+import { getGlobalEconomyUser } from '../../lib/economy.js'
+
 let users = {}
 
 export default {
@@ -10,7 +12,7 @@ export default {
   if (!globalThis.db.data.chats[m.chat].rpg)
     return m.reply(`❒ Este grupo tiene los comandos de *Economía* en pausa.\n\nUn *administrador* puede activarlos con:\n› *${prefa}economia enable*`)
 
-let user = globalThis.db.data.chats[m.chat].users[m.sender]
+let user = getGlobalEconomyUser(m.sender)
   if (!user.coinfCooldown) user.coinfCooldown = 0;
   let remainingTime = user.coinfCooldown - Date.now();
 

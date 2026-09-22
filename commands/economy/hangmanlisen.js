@@ -1,4 +1,5 @@
 import { normalizeJid, sameJid } from '../../lib/utils.js'
+import { getGlobalEconomyUser } from '../../lib/economy.js'
 
 const words = [
   'estrella', 'ventana', 'puerta', 'computadora', 'televisor', 'desenlace', 'animacion', 'instruccion', 'contraseña', 'bicampeonato', 'melancolia', 'desconocido', 'interrogante', 'subterraneo', 'tratamiento', 'plan', 'hielo', 'helado', 'reencarnacion', 'resultado', 'caricatura', 'desintegrado', 'graduacion', 'rechazo', 'murmullo', 'escalofrio', 'condor',
@@ -117,7 +118,8 @@ export async function before(m, { client }) {
 
       const monedas = global.db.data.settings[botId]?.currency;
 
-      let user = global.db.data.chats[m.chat].users[m.sender];
+       let user = global.db.data.chats[m.chat].users[m.sender];
+       const economy = getGlobalEconomyUser(m.sender);
 
       if (!guess.match(/^[a-z]+$/)) {
         return client.reply(
@@ -132,7 +134,7 @@ export async function before(m, { client }) {
         if (guess === word) {
 
           user.exp += 500;
-          user.coins += 1000;
+           economy.coins += 1000;
           user.ahorcadoCooldown = Date.now() + COOLDOWN;
 
           const info = `╭━〔 ✦ GANASTE ✦ 〕━⬣
@@ -145,7 +147,7 @@ export async function before(m, { client }) {
 ┃
 ┃ ✧ Total actual:
 ┃ ${user.exp} exp
-┃ ${user.coins} ${monedas}
+┃ ${economy.coins} ${monedas}
 ┃
 ┃ ✧ Espera:
 ┃ ${msToTime(COOLDOWN)}
@@ -172,9 +174,9 @@ export async function before(m, { client }) {
 
             user.exp = Math.max(0, user.exp - PENALTY_EXP);
 
-            user.coins = Math.max(
+             economy.coins = Math.max(
               0,
-              user.coins - PENALTY_CHOCOLATES
+               economy.coins - PENALTY_CHOCOLATES
             );
 
             user.ahorcadoCooldown =
@@ -190,7 +192,7 @@ export async function before(m, { client }) {
 ┃
 ┃ ✧ Total actual:
 ┃ ${user.exp} exp
-┃ ${user.coins} ${monedas}
+┃ ${economy.coins} ${monedas}
 ┃
 ┃ ✧ Espera:
 ┃ ${msToTime(COOLDOWN)}
@@ -270,7 +272,7 @@ ${hangmanArt[6 - game.attemptsLeft]}
 
           user.exp += 500;
 
-          user.coins += 1000;
+           economy.coins += 1000;
 
           user.ahorcadoCooldown =
             Date.now() + COOLDOWN;
@@ -285,7 +287,7 @@ ${hangmanArt[6 - game.attemptsLeft]}
 ┃
 ┃ ✧ Total actual:
 ┃ ${user.exp} exp
-┃ ${user.coins} ${monedas}
+┃ ${economy.coins} ${monedas}
 ┃
 ┃ ✧ Espera:
 ┃ ${msToTime(COOLDOWN)}
@@ -307,9 +309,9 @@ ${hangmanArt[6 - game.attemptsLeft]}
             user.exp - PENALTY_EXP
           );
 
-          user.coins = Math.max(
+           economy.coins = Math.max(
             0,
-            user.coins - PENALTY_CHOCOLATES
+             economy.coins - PENALTY_CHOCOLATES
           );
 
           user.ahorcadoCooldown =
@@ -325,7 +327,7 @@ ${hangmanArt[6 - game.attemptsLeft]}
 ┃
 ┃ ✧ Total actual:
 ┃ ${user.exp} exp
-┃ ${user.coins} ${monedas}
+┃ ${economy.coins} ${monedas}
 ┃
 ┃ ✧ Espera:
 ┃ ${msToTime(COOLDOWN)}

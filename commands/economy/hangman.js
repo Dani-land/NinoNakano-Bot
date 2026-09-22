@@ -1,3 +1,5 @@
+import { getGlobalEconomyUser } from '../../lib/economy.js'
+
 const words = [
   'estrella', 'ventana', 'puerta', 'computadora', 'televisor', 'desenlace', 'animacion', 'instruccion', 'contraseña', 'bicampeonato', 'melancolia', 'desconocido', 'interrogante', 'subterraneo', 'tratamiento', 'plan', 'hielo', 'helado', 'reencarnacion', 'resultado', 'caricatura', 'desintegrado', 'graduacion', 'rechazo', 'murmullo', 'escalofrio', 'condor',
   'universidad', 'biblioteca', 'montaña', 'teléfono', 'elefante', 'hipopotamo', 'murcielago', 'arquitectura', 'electricidad', 'fotografia', 'aguacate', 'contenedor', 'tenedor', 'paralelepipedo', 'circunferencia', 'inverosimil', 'yacimiento', 'jengibre', 'bumeran', 'metafisica', 'jugabilidad', 'olvidar', 'hentai', 'maltrato', 'alquimia', 'silueta', 'tridente',
@@ -147,6 +149,7 @@ const handler = {
       }
 
       const user = global.db.data.chats[m.chat].users[m.sender];
+      const economy = getGlobalEconomyUser(m.sender);
 
       if (!user.ahorcadoCooldown)
         user.ahorcadoCooldown = 0;
@@ -202,7 +205,7 @@ const handler = {
 
           user.exp = Math.max(0, user.exp - PENALTY_EXP);
 
-          user.coins = Math.max(0, user.coins - PENALTY_CHOCOLATES);
+           economy.coins = Math.max(0, economy.coins - PENALTY_CHOCOLATES);
 
           user.ahorcadoCooldown = Date.now() + COOLDOWN;
 
@@ -210,7 +213,7 @@ const handler = {
 
           await client.reply(
             m.chat,
-            `〔✦〕 El tiempo de la partida ha terminado.\n\n✎ La palabra correcta era: *${word}*\n\n> Penalización:\n✦ -${PENALTY_EXP} exp\n✦ -${PENALTY_CHOCOLATES} ${monedas}\n\n> Balance actual:\n✦ ${user.exp} exp\n✦ ${user.coins} ${monedas}\n\n> Podrás volver a jugar en *${msToTime(COOLDOWN)}*.`,
+           `〔✦〕 El tiempo de la partida ha terminado.\n\n✎ La palabra correcta era: *${word}*\n\n> Penalización:\n✦ -${PENALTY_EXP} exp\n✦ -${PENALTY_CHOCOLATES} ${monedas}\n\n> Balance actual:\n✦ ${user.exp} exp\n✦ ${economy.coins} ${monedas}\n\n> Podrás volver a jugar en *${msToTime(COOLDOWN)}*.`,
             m
           );
         }

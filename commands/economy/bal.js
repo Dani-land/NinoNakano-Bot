@@ -1,4 +1,5 @@
 import { resolveLidToRealJid } from "../../lib/utils.js"
+import { getGlobalEconomyUser } from "../../lib/economy.js"
 
 export default {
   command: ['balance', 'bal'],
@@ -18,15 +19,15 @@ export default {
     const who2 = mentioned.length > 0 ? mentioned[0] : (m.quoted ? m.quoted.sender : m.sender)
     const who = await resolveLidToRealJid(who2, client, m.chat)
 
-    if (!chatData.users?.[who2])
+    if (!db.users?.[who] && !db.users?.[who2] && !chatData.users?.[who2] && !chatData.users?.[who])
       return m.reply(`ꕥ El usuario mencionado no está registrado en mi base de datos.`)
 
-    const user = chatData.users[who]
+    const user = getGlobalEconomyUser(who)
     const total = (user.coins || 0) + (user.bank || 0)
 
     const bal = `✦ Balance
 
-꒰୨୧꒱ Usuario › <${global.db.data.users[who].name}>
+꒰୨୧꒱ Usuario › <${global.db.data.users[who]?.name || who.split('@')[0]}>
 ꒰୨୧꒱ Coins › ¥${user.coins?.toLocaleString() || 0} ${monedas}
 ꒰୨୧꒱ Banco › ¥${user.bank?.toLocaleString() || 0} ${monedas}
 ꒰୨୧꒱ Total › ¥${total.toLocaleString()} ${monedas}
