@@ -46,7 +46,7 @@ export default {
         return m.reply('ꕥ No se pudo obtener el video. Verifica que el enlace sea público.')
       }
 
-      const caption = `ꨄ︎ Ⓣ︎Ⓘ︎Ⓚ︎Ⓣ︎Ⓞ︎Ⓚ︎ ꨄ︎
+      const caption = `TIKTOK ᗪOᗯᑎᒪOᗩᗪᗴᖇ
 
 > *𖨆 𝚄𝚜𝚞𝚊𝚛𝚒𝚘:* ${result.author || result.username || 'Desconocido'}
 > *⌫ 𝙳𝚎𝚜𝚌𝚛𝚒𝚙𝚌𝚒𝚘𝚗:* ${result.title || 'Sin descripción'}
