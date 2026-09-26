@@ -171,7 +171,7 @@ async function sendResult(opts) {
     }
   }
 
-  var lines = ['✿ *' + finalTitle + '*', '']
+  var lines = ['☘︎ *' + finalTitle + '*', '']
   if (result.duration || (videoInfo && (videoInfo.timestamp || videoInfo.duration))) {
     lines.push(
       '⌗» 𝙳𝚞𝚛𝚊𝚌𝚒𝚘𝚗 › ' + (result.duration || videoInfo.timestamp || videoInfo.duration)
@@ -187,7 +187,7 @@ async function sendResult(opts) {
   if (result.quality) lines.push('⌗» 𝙲𝚊𝚕𝚒𝚍𝚊𝚍 › ' + result.quality)
   if (result.size) lines.push('⌗» 𝚃𝚊𝚖𝚊𝚗̃𝚘 › ' + result.size)
   lines.push('')
-  lines.push(isAudio ? '❁ ᗴᑎᐯIᗩᑎᗪO ᗩᑌᗪIO...' : '𑁍 ᗴᑎᐯIᗩᑎᗪO ᐯIᗪᗴO...')
+  lines.push(isAudio ? '> ❁ ᗴᑎᐯIᗩᑎᗪO ᗩᑌᗪIO...' : '> 𑁍 ᗴᑎᐯIᗩᑎᗪO ᐯIᗪᗴO...')
 
   var infoText = lines.join('\n')
   var ctx = newsletterContext()
