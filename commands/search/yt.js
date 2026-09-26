@@ -37,7 +37,7 @@ export default {
         }
       })
       .filter((v) => v)
-      .join('\n\n︵︵︵︵︵︵︵︵︵︵︵︵︵︵︵︵\n\n')
+      .join('\n\n▭▭▭▭▭▭▭▭▭▭▭▭▭\n\n')
     client.sendMessage(m.chat, { image: Ibuff, caption: teks2 }, { quoted: m }).catch((err) => {
       m.reply('Error')
     })
