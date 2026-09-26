@@ -48,11 +48,11 @@ export default {
 
       const caption = `ꨄ︎ Ⓣ︎Ⓘ︎Ⓚ︎Ⓣ︎Ⓞ︎Ⓚ︎ ꨄ︎
 
-*𖨆 𝚄𝚜𝚞𝚊𝚛𝚒𝚘:* ${result.author || result.username || 'Desconocido'}
-*⌫ 𝙳𝚎𝚜𝚌𝚛𝚒𝚙𝚌𝚒𝚘𝚗:* ${result.title || 'Sin descripción'}
-*⌗» Canción:* ${result.musicTitle || 'N/A'}${result.musicArtist ? ` - ${result.musicArtist}` : ''}
+> *𖨆 𝚄𝚜𝚞𝚊𝚛𝚒𝚘:* ${result.author || result.username || 'Desconocido'}
+> *⌫ 𝙳𝚎𝚜𝚌𝚛𝚒𝚙𝚌𝚒𝚘𝚗:* ${result.title || 'Sin descripción'}
+> *♪ Canción:* ${result.musicTitle || 'N/A'}${result.musicArtist ? ` - ${result.musicArtist}` : ''}
 
-⌗» 𝔸𝕡𝕚: ${NYX_BASE}`
+⌗» ᑭᖇO᙭Y: ${NYX_BASE}`
 
       await client.sendMessage(
         m.chat,
