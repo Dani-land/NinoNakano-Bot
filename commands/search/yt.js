@@ -23,14 +23,14 @@ export default {
             return ` *Título ›* *${v.title}* 
 
 > ⴵ *Duración ›* ${v.timestamp}
-> ❖ *Subido ›* ${v.ago}
-> ✿ *Vistas ›* ${v.views}
-> ❒ *Url ›* ${v.url}
+> ♧︎︎︎ *Subido ›* ${v.ago}
+> 𖨆 *Vistas ›* ${v.views}
+> ☁︎ *Url ›* ${v.url}
 `.trim()
           case 'channel':
             return `
-> ❖ Canal › *${v.name}*
-> ❒ Url › ${v.url}
+> ✿︎ Canal › *${v.name}*
+> ☁︎ Url › ${v.url}
 > ❀ Subscriptores › ${v.subCountLabel} (${v.subCount})
 > ✿ Videos totales › ${v.videoCount}
 `.trim()
