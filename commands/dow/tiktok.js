@@ -1,8 +1,6 @@
 import fetch from 'node-fetch'
 
-const NYX_BASE = 'https://nyxdlapi.vercel.app'
-const NYX_TT_URL = `${NYX_BASE}/api/downloads/tiktok`
-const NYX_API_KEY = 'nyx_vDSYgjTlKOOLhz-_XmojwHjvH1_hp5c2'
+const DLAPIXY_TT_URL = 'https://dlapixy.vercel.app/api/downloads/tiktok'
 
 export default {
   command: ['tiktok', 'tt'],
@@ -18,41 +16,40 @@ export default {
     const url = args[0]
 
     try {
-      const apiUrl = `${NYX_TT_URL}?url=${encodeURIComponent(url)}&apikey=${NYX_API_KEY}`
+      const apiUrl = `${DLAPIXY_TT_URL}?url=${encodeURIComponent(url)}`
       const res = await fetch(apiUrl)
       const text = await res.text()
 
       if (!res.ok) {
-        throw new Error(`NyxDLaPI HTTP ${res.status}: ${text.slice(0, 200)}`)
+        throw new Error(`Dlapixy HTTP ${res.status}: ${text.slice(0, 200)}`)
       }
 
       let json
       try {
         json = JSON.parse(text)
       } catch {
-        throw new Error(`Respuesta inválida de NyxDLaPI: ${text.slice(0, 200)}`)
+        throw new Error(`Respuesta inválida de Dlapixy: ${text.slice(0, 200)}`)
       }
 
-      if (!json?.status) {
+      if (!json?.ok) {
         throw new Error(json?.message || 'La API no devolvió un resultado válido.')
       }
 
-      const result = json?.result
+      const files = Array.isArray(json?.files) ? json.files : []
+      const videoFile = files.find((f) => f.kind === 'video')
 
-      // preferimos la versión sin marca de agua; si no viene, usamos la normal
-      const videoUrl = result?.downloadNoWatermark || result?.download
+      const videoUrl = videoFile?.url
 
-      if (!result || !videoUrl) {
+      if (!videoUrl) {
         return m.reply('ꕥ No se pudo obtener el video. Verifica que el enlace sea público.')
       }
 
       const caption = `TIKTOK ᗪOᗯᑎᒪOᗩᗪᗴᖇ
 
-> *𖨆 𝚄𝚜𝚞𝚊𝚛𝚒𝚘:* ${result.author || result.username || 'Desconocido'}
-> *⌫ 𝙳𝚎𝚜𝚌𝚛𝚒𝚙𝚌𝚒𝚘𝚗:* ${result.title || 'Sin descripción'}
-> *♪ Canción:* ${result.musicTitle || 'N/A'}${result.musicArtist ? ` - ${result.musicArtist}` : ''}
+> *⌫ 𝙳𝚎𝚜𝚌𝚛𝚒𝚙𝚌𝚒𝚘𝚗:* ${json.title || 'Sin descripción'}
+> *⏱ 𝙳𝚞𝚛𝚊𝚌𝚒𝚘𝚗:* ${json.durationSeconds ? `${json.durationSeconds}s` : 'Desconocida'}
 
-⌗» ᑭᖇO᙭Y: ${NYX_BASE}`
+⌗» ᑭᖇO᙭Y: Dlapixy`
 
       await client.sendMessage(
         m.chat,
