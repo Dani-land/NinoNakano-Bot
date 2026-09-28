@@ -49,7 +49,7 @@ export default {
 > *⌫ 𝙳𝚎𝚜𝚌𝚛𝚒𝚙𝚌𝚒𝚘𝚗:* ${json.title || 'Sin descripción'}
 > *⏱ 𝙳𝚞𝚛𝚊𝚌𝚒𝚘𝚗:* ${json.durationSeconds ? `${json.durationSeconds}s` : 'Desconocida'}
 
-⌗» ᑭᖇO᙭Y: Dlapixy`
+⌗» ᑭᖇO᙭Y: https://dlapixy.vercel.app`
 
       await client.sendMessage(
         m.chat,
