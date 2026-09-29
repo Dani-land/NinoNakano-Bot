@@ -1,4 +1,5 @@
 import yts from 'yt-search'
+import { getCommandPreview } from '../../lib/commandPreview.js'
 import fetch from 'node-fetch'
 import sharp from 'sharp'
 
@@ -285,7 +286,15 @@ export default {
 
     try {
       if (!text || !String(text).trim()) {
-        return client.reply(m.chat, '𖣘 Ingresa un nombre o URL de YouTube.', m)
+        var preview = await getCommandPreview({
+          icon: 'portrait',
+          title: 'YouTube',
+          body: 'Búsqueda y descarga de audio o video',
+        })
+        return m.reply(
+          '𖣘 Ingresa un nombre o URL de YouTube.',
+          preview ? { contextInfo: { externalAdReply: preview } } : {}
+        )
       }
 
       var isAudio = ['play', 'mp3', 'playaudio', 'ytmp3', 'playdoc'].indexOf(command) !== -1

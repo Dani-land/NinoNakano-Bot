@@ -1,4 +1,5 @@
 import fetch from 'node-fetch'
+import { getCommandPreview } from '../../lib/commandPreview.js'
 
 const DLAPIXY_TT_URL = 'https://dlapixy.vercel.app/api/downloads/tiktok'
 
@@ -8,8 +9,14 @@ export default {
 
   run: async ({ client, m, args }) => {
     if (!args.length || !args[0].includes('tiktok.com')) {
+      const preview = await getCommandPreview({
+        icon: 'square',
+        title: 'TikTok',
+        body: 'Descargas de video',
+      })
       return m.reply(
-        `✎ Ingresa algún *URL* válido de TikTok.\n\nEjemplo: *#tiktok* https://vt.tiktok.com/...`
+        `✎ Ingresa algún *URL* válido de TikTok.\n\nEjemplo: *#tiktok* https://vt.tiktok.com/...`,
+        preview ? { contextInfo: { externalAdReply: preview } } : {}
       )
     }
 

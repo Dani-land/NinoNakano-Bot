@@ -1,6 +1,7 @@
 const NYX_API_KEY = 'nyx_vDSYgjTlKOOLhz-_XmojwHjvH1_hp5c2'
 
 import fetch from 'node-fetch'
+import { getCommandPreview } from '../../lib/commandPreview.js'
 
 const NYX_BASE = 'https://nyxdlapi.vercel.app'
 const NYX_IG_URL = `${NYX_BASE}/api/downloads/instagram`
@@ -74,11 +75,27 @@ export default {
     const url = args[0]
 
     if (!url) {
-      return m.reply('✐ Ingresa algún *URL* de *Instagram*.')
+      const preview = await getCommandPreview({
+        icon: 'portrait',
+        title: 'Instagram',
+        body: 'Descarga de publicaciones',
+      })
+      return m.reply(
+        '✐ Ingresa algún *URL* de *Instagram*.',
+        preview ? { contextInfo: { externalAdReply: preview } } : {}
+      )
     }
 
     if (!url.match(/instagram\.com\/(p|reel|share|tv)\//)) {
-      return m.reply('✐ Asegúrate que el *URL* sea de *Instagram*')
+      const preview = await getCommandPreview({
+        icon: 'portrait',
+        title: 'Instagram',
+        body: 'Descarga de publicaciones',
+      })
+      return m.reply(
+        '✐ Asegúrate que el *URL* sea de *Instagram*',
+        preview ? { contextInfo: { externalAdReply: preview } } : {}
+      )
     }
 
     try {
