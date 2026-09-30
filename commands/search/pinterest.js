@@ -1,41 +1,29 @@
 import fetch from 'node-fetch'
 
-const DVYER_API_KEY = 'dvyer2008'
-const DVYER_PIN_SEARCH = 'https://dv-yer-api.online/pinterest/search'
+const NYX_API_URL = 'https://nyxdlapi.vercel.app/api/search/pinterest'
+const NYX_API_KEY = 'nyx_vDSYgjTlKOOLhz-_XmojwHjvH1_hp5c2'
 
 async function searchPinterest(query, limit) {
-  const url =
-    DVYER_PIN_SEARCH +
-    '?q=' +
-    encodeURIComponent(query) +
-    '&limit=' +
-    encodeURIComponent(limit) +
-    '&apikey=' +
-    encodeURIComponent(DVYER_API_KEY)
-
+  const url = `${NYX_API_URL}?q=${encodeURIComponent(query)}&limit=${limit}&apikey=${NYX_API_KEY}`
   const res = await fetch(url)
   const text = await res.text()
 
   if (!res.ok) {
-    throw new Error('dv-yer HTTP ' + res.status + ': ' + text.slice(0, 200))
+    throw new Error(`NyxDLaPI HTTP ${res.status}: ${text.slice(0, 200)}`)
   }
 
   let json
   try {
     json = JSON.parse(text)
-  } catch (e) {
-    throw new Error('Respuesta inválida de dv-yer: ' + text.slice(0, 200))
+  } catch {
+    throw new Error(`Respuesta inválida de NyxDLaPI: ${text.slice(0, 200)}`)
   }
 
-  const results = (json && json.results) || []
-  if (!json || (json.ok !== true && !results.length)) {
-    throw new Error((json && json.message) || 'No se encontraron resultados.')
-  }
-  if (!results.length) {
-    throw new Error('No se encontraron resultados.')
+  if (!json?.status || !json?.result?.results?.length) {
+    throw new Error(json?.message || 'No se encontraron resultados.')
   }
 
-  return results
+  return json.result.results
 }
 
 async function downloadImage(url) {
@@ -43,49 +31,40 @@ async function downloadImage(url) {
     headers: {
       'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36',
+      Referer: 'https://www.pinterest.com/',
       Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
     },
   })
-  if (!res.ok) throw new Error('No se pudo descargar la imagen (HTTP ' + res.status + ')')
+  if (!res.ok) throw new Error(`No se pudo descargar la imagen (HTTP ${res.status})`)
   const buffer = await res.buffer()
   if (!buffer || buffer.length < 500) throw new Error('Imagen vacía o inválida')
   return buffer
-}
-
-function pickImage(v) {
-  return (
-    (v && (v.download_url_full || v.download_url || v.url || v.direct_url)) ||
-    null
-  )
 }
 
 export default {
   command: ['pinterest', 'pin'],
   category: 'search',
 
-  run: async function (ctx) {
-    const client = ctx.client
-    const m = ctx.m
-    const args = ctx.args || []
+  run: async ({ client, m, args }) => {
     const text = args.join(' ')
 
     if (!text) {
       return m.reply(
-        '✐ Ingresa un término de búsqueda.\n\n' +
-          '✰ Ejemplo:\n' +
-          '.pin anime icons\n' +
-          '.pinterest Hatsune Miku\n' +
-          '.pin nino nakano 10'
+`✐ 𝙸𝚗𝚐𝚛𝚎𝚜𝚊 𝚊𝚕𝚐𝚞𝚗 𝚝𝚒𝚙𝚘 𝚍𝚎 𝚋𝚞𝚜𝚚𝚞𝚎𝚍𝚊.
+
+✰ Ejemplo:
+.pin anime icons
+.pinterest Hatsune Miku`
       )
     }
 
-    let limit = 10
+    let limit = 5
     let query = text
     const lastArg = args[args.length - 1]
 
-    if (lastArg && !isNaN(lastArg) && String(lastArg).trim() !== '') {
-      limit = parseInt(lastArg, 10)
-      if (limit > 15) limit = 15
+    if (lastArg && !isNaN(lastArg) && lastArg.trim() !== '') {
+      limit = parseInt(lastArg)
+      if (limit > 10) limit = 10
       if (limit < 1) limit = 1
       query = args.slice(0, -1).join(' ')
     }
@@ -95,92 +74,49 @@ export default {
     }
 
     try {
-      await m.reply('*꒰୨୧꒱* Buscando tus imágenes en *Pinterest*...')
+      await m.reply('ꕤ 𝐵𝑢𝑠𝑐𝑎𝑛𝑑𝑜 𝑖𝑚𝑎𝑔𝑒𝑛𝑒𝑠 𝑒𝑛 𝑝𝑖𝑛𝑡𝑒𝑟𝑒𝑠𝑡...')
 
       const results = await searchPinterest(query, limit)
-      const slice = results.slice(0, limit)
+
+      const pickImage = (v) => v.image || v.download || v.descarga
 
       const albumItems = []
-      let omitidos = 0
 
-      for (let i = 0; i < slice.length; i++) {
-        const v = slice[i]
+      for (const v of results.slice(0, limit)) {
         const imgUrl = pickImage(v)
-        if (!imgUrl) {
-          omitidos++
-          continue
-        }
+        if (!imgUrl) continue
 
         try {
           const buffer = await downloadImage(imgUrl)
-          const caption =
-            'ꕥ ᑭIᑎTᗴᖇᗴՏT Տᗴᗩᖇᑕᕼ\n\n' +
-            '⌗» ' +
-            (i + 1) +
-            '. ' +
-            (v.title || 'Sin título') +
-            '\n' +
-            '𓅓 𝓑𝓤𝓢𝓠𝓤𝓔𝓓𝓐 › ' +
-            query
-
-          albumItems.push({
-            image: buffer,
-            caption: caption,
-          })
-        } catch (e) {
-          console.log('[pinterest] omitida:', e.message)
-          omitidos++
-        }
+          albumItems.push({ image: buffer, caption: v.titulo || undefined })
+        } catch (sendErr) {}
       }
 
       if (!albumItems.length) {
-        return m.reply(
-          '✘ No se pudo descargar ninguna imagen. Revisa la API o las URLs.'
-        )
+        return m.reply('✘ No se pudo enviar ninguna imagen. Revisa la consola: puede que el campo de imagen o la URL de Pinterest no sean válidos.')
       }
 
-      try {
-        await client.sendMessage(
-          m.chat,
-          {
-            album: albumItems,
-          },
-          { quoted: m }
-        )
-      } catch (albumErr) {
-        console.log('[pinterest] album falló, enviando una por una:', albumErr.message)
+      const infoTxt =
+        `☾︎ ᑭIᑎTᗴᖇᗴՏT Տᗴᗩᖇᕼ ☽︎\n\n` +
+        `⌗» 𝙰𝚙𝚒 𝚞𝚜𝚊𝚍𝚊 › NyxDLaPI\n` +
+        `ᰔᩚ 𝙱𝚞𝚜𝚚𝚞𝚎𝚍𝚊 › ${query}`
 
-        for (let i = 0; i < albumItems.length; i++) {
-          try {
-            await client.sendMessage(
-              m.chat,
-              {
-                image: albumItems[i].image,
-                caption: albumItems[i].caption,
-              },
-              { quoted: m }
-            )
-            await new Promise(function (r) {
-              setTimeout(r, 500)
-            })
-          } catch (e) {
-            console.log('[pinterest] fallo individual:', e.message)
-          }
-        }
-      }
+      albumItems[0].caption = albumItems[0].caption
+        ? `${infoTxt}\n\n⌗» 𝚃𝚒𝚝𝚞𝚕𝚘 › ${albumItems[0].caption}`
+        : infoTxt
 
-      if (omitidos > 0) {
-        await m.reply(
-          '✓ Enviadas *' +
-            albumItems.length +
-            '* imágenes' +
-            (omitidos ? ' (' + omitidos + ' omitidas)' : '') +
-            '.'
-        )
-      }
+      await client.sendMessage(
+        m.chat,
+        { album: albumItems },
+        { quoted: m }
+      )
     } catch (e) {
       console.log('[pinterest]', e.message)
-      m.reply('✘ Error al buscar en Pinterest.\n\n⌗» ' + e.message)
+      m.reply(
+`✘ Error al buscar en Pinterest.
+
+⌗» ${e.message}`
+      )
     }
   },
 }
