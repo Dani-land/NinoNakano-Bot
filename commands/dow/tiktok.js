@@ -44,12 +44,7 @@ export default {
 
       const files = Array.isArray(json?.files) ? json.files : []
       const videoFile = files.find((f) => f.kind === 'video')
-
       const videoUrl = videoFile?.url
-
-      if (!videoUrl) {
-        return m.reply('ꕥ No se pudo obtener el video. Verifica que el enlace sea público.')
-      }
 
       const caption = `TIKTOK ᗪOᗯᑎᒪOᗩᗪᗴᖇ
 
@@ -58,14 +53,50 @@ export default {
 
 ⌗» ᑭᖇO᙭Y: https://dlapixy.vercel.app`
 
-      await client.sendMessage(
-        m.chat,
-        {
-          video: { url: videoUrl },
-          caption,
-        },
-        { quoted: m }
-      )
+      // ── Video normal ──────────────────────────────────────────────────────
+      if (videoUrl) {
+        await client.sendMessage(
+          m.chat,
+          {
+            video: { url: videoUrl },
+            caption,
+          },
+          { quoted: m }
+        )
+        return
+      }
+
+      // ── Post de imágenes (mediaType: "image") ───────────────────────────────
+      const imageUrls = Array.isArray(json?.imageUrls) && json.imageUrls.length
+        ? json.imageUrls
+        : (json?.imageUrl ? [json.imageUrl] : [])
+
+      if (imageUrls.length) {
+        if (imageUrls.length === 1) {
+          await client.sendMessage(
+            m.chat,
+            {
+              image: { url: imageUrls[0] },
+              caption,
+            },
+            { quoted: m }
+          )
+        } else {
+          const albumItems = imageUrls.map((u, i) => ({
+            image: { url: u },
+            caption: i === 0 ? caption : undefined,
+          }))
+
+          await client.sendMessage(
+            m.chat,
+            { album: albumItems },
+            { quoted: m }
+          )
+        }
+        return
+      }
+
+      return m.reply('ꕥ No se pudo obtener el video ni las imágenes. Verifica que el enlace sea público.')
     } catch (e) {
       console.log('[tiktok]', e.message)
       await m.reply('ꕥ El servicio no está disponible en este momento.')
