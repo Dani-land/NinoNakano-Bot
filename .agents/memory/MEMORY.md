@@ -1,0 +1,1 @@
+- [WhatsApp image compatibility](whatsapp-image-compatibility.md) — regular WhatsApp clients may omit externalAdReply thumbnails; use actual image messages for visible icons.

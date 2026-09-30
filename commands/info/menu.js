@@ -1,6 +1,6 @@
 import moment from 'moment-timezone'
 import { commands } from '../../lib/commands.js'
-import { getCommandPreview } from '../../lib/commandPreview.js'
+import { sendCommandIcon } from '../../lib/commandPreview.js'
 
 function titleCase(text) {
   text = text || ''
@@ -169,12 +169,7 @@ export default {
           serverMessageId: -1,
         },
       }
-      var menuPreview = await getCommandPreview({
-        icon: 'square',
-        title: 'Nino Nakano Bot',
-        body: 'Menú de comandos',
-      })
-      if (menuPreview) ctxInfo.externalAdReply = menuPreview
+      await sendCommandIcon(client, m, { icon: 'square' })
 
       if (banner) {
         await client.sendMessage(

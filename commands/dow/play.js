@@ -1,5 +1,5 @@
 import yts from 'yt-search'
-import { getCommandPreview } from '../../lib/commandPreview.js'
+import { replyWithCommandIcon } from '../../lib/commandPreview.js'
 import fetch from 'node-fetch'
 import sharp from 'sharp'
 
@@ -286,14 +286,11 @@ export default {
 
     try {
       if (!text || !String(text).trim()) {
-        var preview = await getCommandPreview({
-          icon: 'portrait',
-          title: 'YouTube',
-          body: 'Búsqueda y descarga de audio o video',
-        })
-        return m.reply(
+        return replyWithCommandIcon(
+          client,
+          m,
           '𖣘 Ingresa un nombre o URL de YouTube.',
-          preview ? { contextInfo: { externalAdReply: preview } } : {}
+          { icon: 'portrait' }
         )
       }
 
