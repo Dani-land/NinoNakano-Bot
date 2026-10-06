@@ -7,7 +7,7 @@ const NYX_BASE = 'https://nyxdlapi.vercel.app'
 const NYX_IG_URL = `${NYX_BASE}/api/downloads/instagram`
 
 const CHANNEL_JID = '120363420575743790@newsletter'
-const CHANNEL_NAME = '❥︎ ᑎIᑎO ᑎᗩKᗩᑎO'
+const CHANNEL_NAME = '☆ﾟ.･｡ﾟ ՏTᗩᖇՏᕼᗩᗪᗴ Tᗴᗩᗰ ﾟ｡･.ﾟ☆'
 
 function channelContext(extra = {}) {
   return {
