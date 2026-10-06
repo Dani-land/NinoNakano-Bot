@@ -3,7 +3,7 @@ import fetch from 'node-fetch';
 const DLAPIXY_SPOTIFY = 'https://dlapixy.vercel.app/api/downloads/spotify'
 
 const NEWSLETTER_JID = '120363420575743790@newsletter'
-const NEWSLETTER_NAME = 'Nιησ Pʀσʝєᴄтѕ'
+const NEWSLETTER_NAME = 'ՏTᗩᖇՏᕼᗩᗪᗴ ˚₊· ͟͟͞͞➳ Tᗴᗩᗰ'
 
 function newsletterContext() {
   return {
