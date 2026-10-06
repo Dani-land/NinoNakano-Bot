@@ -12,7 +12,7 @@ const groupMetadataCache = new Map()
 const groupMetadataRequests = new Map()
 
 const CHANNEL_JID = '120363420575743790@newsletter'
-const CHANNEL_NAME = '❁ N͜͡i͜͡n͜͡o͜͡ N͜͡a͜͡k͜͡a͜͡n͜͡o͜͡ w͜͡a͜͡b͜͡o͜͡t͜͡'
+const CHANNEL_NAME = 'ՏTᗩᖇՏᕼᗩᗪᗴ ˚₊· ͟͟͞͞➳ Tᗴᗩᗰ'
 const MEDIA_DIR = path.join(process.cwd(), 'lib', 'media')
 const EVENT_TEMPLATES = {
     welcome: {
