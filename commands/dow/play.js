@@ -9,7 +9,7 @@ const DLAPIXY_AUDIO = 'https://dlapixy.vercel.app/api/downloads/youtube/audio'
 const DLAPIXY_VIDEO = 'https://dlapixy.vercel.app/api/downloads/youtube/video'
 
 const NEWSLETTER_JID = '120363420575743790@newsletter'
-const NEWSLETTER_NAME = 'Nιησ Pʀσʝєᴄтѕ'
+const NEWSLETTER_NAME = '𖢺 ՏTᗩᖇՏᕼᗩᗪᗴ Tᗴᗩᗰ 𖢺'
 
 const HEADERS = {
   'user-agent':
