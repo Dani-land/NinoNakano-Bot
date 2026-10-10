@@ -17,11 +17,11 @@ const MEDIA_DIR = path.join(process.cwd(), 'lib', 'media')
 const EVENT_TEMPLATES = {
     welcome: {
         file: path.join(MEDIA_DIR, 'welcome.png'),
-        avatar: { left: 1022, top: 153, width: 246, height: 246 },
+        avatar: { left: 1040, top: 183, width: 210, height: 210 },
     },
     goodbye: {
         file: path.join(MEDIA_DIR, 'goodbye.png'),
-        avatar: { left: 750, top: 234, width: 246, height: 246 },
+        avatar: { left: 773, top: 240, width: 212, height: 212 },
     },
 }
 
@@ -94,9 +94,8 @@ async function renderEventImage(client, template, jid) {
         const avatar = await sharp(profilePicture)
             .rotate()
             .resize(width, height, {
-                fit: 'contain',
+                fit: 'cover',
                 position: 'centre',
-                background: { r: 0, g: 0, b: 0, alpha: 0 },
             })
             .composite([{ input: avatarMask, blend: 'dest-in' }])
             .png()
