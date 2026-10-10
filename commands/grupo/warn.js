@@ -59,8 +59,6 @@ export default {
       if (total >= warnLimit && expulsar) {
         try {
           await client.groupParticipantsUpdate(m.chat, [targetId], 'remove')
-          delete chat.users[targetId]
-          delete global.db.data.users[targetId]
           message += `\n\n> ❖ El usuario ha alcanzado el límite de advertencias y fue expulsado del grupo.`
         } catch {
           message += `\n\n> ❖ El usuario alcanzó el límite, pero no se pudo expulsar automáticamente.`

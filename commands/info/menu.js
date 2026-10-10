@@ -1,6 +1,7 @@
 import moment from 'moment-timezone'
 import { commands } from '../../lib/commands.js'
 import { sendCommandIcon } from '../../lib/commandPreview.js'
+import { getBotSettings, getBannerMediaType, getBannerMimeType } from '../../lib/system/initDB.js'
 
 function titleCase(text) {
   text = text || ''
@@ -31,17 +32,13 @@ export default {
     try {
       var cmdsList = Array.isArray(commands) ? commands : []
       var users = (global.db && global.db.data && global.db.data.users) || {}
-      var settings = (global.db && global.db.data && global.db.data.settings) || {}
-
-      var botId = ((client.user && client.user.id) || '').split(':')[0] || ''
-      botId = botId + '@s.whatsapp.net'
-      var botSettings = settings[botId] || {}
+      var botSettings = getBotSettings(client)
 
       var owner = botSettings.owner || ''
-      var canalId = botSettings.id || '120363420575743790@newsletter'
-      var canalName = botSettings.nameid || '𑁍 ᑎIᑎO ᗯᗩ 𑁍'
-      var link = botSettings.link || ''
-      var banner = botSettings.banner || null
+      var canalId = botSettings.id
+      var canalName = botSettings.nameid
+      var link = botSettings.link
+      var banner = botSettings.banner
 
       var desar = 'Oculto'
       if (owner && !isNaN(owner.replace(/@s\.whatsapp\.net$/, ''))) {
@@ -52,7 +49,7 @@ export default {
       var tiempo = moment.tz('America/Bogota').format('DD MMM YYYY')
       var hora = moment.tz('America/Bogota').format('hh:mm A')
       var jam = moment.tz('America/Bogota').format('HH:mm:ss')
-      var plugins = cmdsList.length
+      var commandsCount = global.comandos instanceof Map ? global.comandos.size : cmdsList.length
 
       var saludo =
         jam < '12:00:00' ? 'Buenos días' : jam < '19:00:00' ? 'Buenas tardes' : 'Buenas noches'
@@ -70,15 +67,16 @@ export default {
         typeof usedPrefix === 'string' && usedPrefix.length ? usedPrefix : '.'
 
       var name = m.pushName || 'Usuario'
+      var botDisplayName = botSettings.namebot2 || botSettings.namebot
 
       var menu = ''
-      menu += '☁︎  ᑎIᑎO ᑎᗩKᗩᑎO ᗯᗩᗷOT  ☁︎\n\n'
+      menu += '☁︎  ' + botDisplayName + '  ☁︎\n\n'
       menu += saludo + ', *' + name + '*\n'
       menu += '᪥ 𝓐𝓺𝓾𝓲 𝓽𝓲𝓮𝓷𝓮𝓼 𝓮𝓵 𝓶𝓮𝓷𝓾 𝓬𝓸𝓶𝓹𝓵𝓮𝓽𝓸 ᪥\n\n'
 
       menu += '‧₊˚ ɪɴғᴏ ᴅᴇʟ ʙᴏᴛ\n'
       menu += '  ⟡  ' + ownerLabel + '  ·  ' + ownerDisplay + '\n'
-      menu += '  ⟡  Plugins  ·  ' + plugins + '\n'
+      menu += '  ⟡  Comandos  ·  ' + commandsCount + '\n'
       menu += '  ⟡  Versión  ·  3.1.9\n'
       menu += '  ⟡  Fecha  ·  ' + tiempo + ' · ' + hora + '\n'
       menu += '  ⟡  Users  ·  ' + Object.keys(users).length.toLocaleString() + '\n'
@@ -135,7 +133,9 @@ export default {
             .map(function (a) {
               return cleanAlias(a)
             })
-            .filter(Boolean)
+            .filter(function (alias) {
+              return Boolean(alias) && (!(global.comandos instanceof Map) || global.comandos.has(alias))
+            })
 
           if (!aliases.length) continue
 
@@ -172,15 +172,28 @@ export default {
       await sendCommandIcon(client, m, { icon: 'square' })
 
       if (banner) {
-        await client.sendMessage(
-          m.chat,
-          {
-            image: { url: banner },
-            caption: menu.trim(),
-            contextInfo: ctxInfo,
-          },
-          { quoted: m }
-        )
+        const mediaType = getBannerMediaType(botSettings)
+        const media = mediaType === 'image'
+          ? { image: { url: banner } }
+          : {
+              video: { url: banner },
+              mimetype: getBannerMimeType(botSettings),
+              ...(mediaType === 'gif' ? { gifPlayback: true } : {}),
+            }
+        try {
+          await client.sendMessage(
+            m.chat,
+            { ...media, caption: menu.trim(), contextInfo: ctxInfo },
+            { quoted: m }
+          )
+        } catch (mediaError) {
+          console.error('[menu] No se pudo enviar el banner configurado:', mediaError)
+          await client.sendMessage(
+            m.chat,
+            { text: menu.trim(), contextInfo: ctxInfo },
+            { quoted: m }
+          )
+        }
       } else {
         await client.sendMessage(
           m.chat,

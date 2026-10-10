@@ -33,6 +33,9 @@ export default {
       )
     }
 
+    db.users[proposer] ||= { name: m.pushName || '' }
+    db.users[proposee] ||= {}
+
     if (proposer === proposee) {
 
       return m.reply(

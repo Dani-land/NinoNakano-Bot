@@ -1,3 +1,5 @@
+import { getBotSettings } from '../../lib/system/initDB.js'
+
 function msToTime(duration) {
   const milliseconds = parseInt((duration % 1000) / 100)
   let seconds = Math.floor((duration / 1000) % 60)
@@ -27,9 +29,9 @@ export default {
     const user = global.db.data.chats[m.chat].users[m.sender]
     const grupo = m.isGroup ? await getGroupName(client, m.chat) : 'Chat privado'
 
-    const botId = client.user.id.split(':')[0] + '@s.whatsapp.net'
-    const botSettings = global.db.data.settings[botId]
+    const botSettings = getBotSettings(client)
     const botname = botSettings.namebot2
+    const botId = client.user.id.split(':')[0] + '@s.whatsapp.net'
 
     const cooldown = 600000
     const nextTime = user.jointime + cooldown

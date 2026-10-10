@@ -2,21 +2,20 @@ const NYX_API_KEY = 'nyx_vDSYgjTlKOOLhz-_XmojwHjvH1_hp5c2'
 
 import fetch from 'node-fetch'
 import { replyWithCommandIcon } from '../../lib/commandPreview.js'
+import { getBotSettings } from '../../lib/system/initDB.js'
 
 const NYX_BASE = 'https://nyxdlapi.vercel.app'
 const NYX_IG_URL = `${NYX_BASE}/api/downloads/instagram`
 
-const CHANNEL_JID = '120363420575743790@newsletter'
-const CHANNEL_NAME = '☆ﾟ.･｡ﾟ ՏTᗩᖇՏᕼᗩᗪᗴ Tᗴᗩᗰ ﾟ｡･.ﾟ☆'
-
-function channelContext(extra = {}) {
+function channelContext(client, extra = {}) {
+  const settings = getBotSettings(client)
   return {
     contextInfo: {
       forwardingScore: 999,
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
-        newsletterJid: CHANNEL_JID,
-        newsletterName: CHANNEL_NAME,
+          newsletterJid: settings.id,
+          newsletterName: settings.nameid,
         serverMessageId: 1,
       },
       ...extra,
@@ -123,7 +122,7 @@ export default {
             {
               [type]: { url: mediaUrl },
               caption: i === 0 ? info : undefined,
-              ...channelContext(),
+              ...channelContext(client),
             },
             { quoted: m }
           )

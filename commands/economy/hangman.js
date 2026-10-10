@@ -118,13 +118,6 @@ const handler = {
         );
       }
 
-      if (global.db.data.chats[m.chat].adminonly) {
-
-        return m.reply(
-          `〔✦〕 Los comandos de *Economía* están restringidos actualmente.\n\n> Un administrador puede desactivar esta opción usando:\n› *${prefa}adminonly disable*`
-        );
-      }
-
       if (!global.db.data.chats[m.chat].rpg) {
 
         return m.reply(

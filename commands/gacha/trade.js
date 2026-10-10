@@ -10,12 +10,17 @@ export default {
     const chatId = m.chat
     const userId = m.sender
     const chatData = db.chats[chatId]
+    chatData.users ||= {}
+    chatData.intercambios ||= []
 
-    if (chatData.adminonly || !chatData.gacha)
+    if (!chatData.gacha)
       return m.reply(`✎ Estos comandos estan desactivados en este grupo.`)
 
-    if (chatData.timeTrade && chatData.timeTrade - Date.now() > 0)
+    const now = Date.now()
+    chatData.intercambios = chatData.intercambios.filter((trade) => trade.expiracion > now)
+    if (chatData.timeTrade && chatData.timeTrade > now)
       return m.reply('《✧》 Ya hay un intercambio en curso. Espera a que se complete o expire.')
+    chatData.timeTrade = 0
 
     const partes = args
       .join(' ')
@@ -40,17 +45,18 @@ export default {
     if (!personaje1) return m.reply(`《✧》 No tienes el personaje *${personaje1Nombre}*.`)
     if (!personaje2)
       return m.reply(`《✧》 El personaje *${personaje2Nombre}* no está disponible para intercambio.`)
+    if (personaje2UserId === userId)
+      return m.reply('《✧》 El otro personaje debe pertenecer a otro usuario.')
 
-   // chatData.intercambios ||= []
     chatData.intercambios.push({
       solicitante: userId,
-      personaje1,
-      personaje2,
+      personaje1Nombre: personaje1.name,
+      personaje2Nombre: personaje2.name,
       destinatario: personaje2UserId,
-      expiracion: Date.now() + 60000,
+      expiracion: now + 60000,
     })
 
-    chatData.timeTrade = Date.now() + 60000
+    chatData.timeTrade = now + 60000
 
     const solicitudMessage = `❀ @${personaje2UserId.split('@')[0]}, @${userId.split('@')[0]} te ha enviado una solicitud de intercambio\n\n✎ *${personaje2.name}* ⇄ *${personaje1.name}*\n> ꕥ Para aceptar, usa › *${prefa}accepttrade* dentro de 1 minuto.
 

@@ -1,5 +1,6 @@
 import * as Jimp from 'jimp';
 import { isSocketOwner } from '../../lib/utils.js'
+import { getBotSettings } from '../../lib/system/initDB.js'
 
 async function resizeImage(media) {
   const jimp = await Jimp.read(media);
@@ -20,8 +21,7 @@ export default {
   category: 'socket',
 
   run: async ({client, m, args}) => {
-    const idBot = client.user.id.split(':')[0] + '@s.whatsapp.net';
-    const config = global.db.data.settings[idBot];
+    const config = getBotSettings(client)
 
     if (!isSocketOwner(client, m, config))
       return m.reply(mess.socket);

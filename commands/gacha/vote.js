@@ -53,7 +53,7 @@ export default {
     const chatConfig = db.chats[chatId]
     const user = db.users[userId]
 
-    if (chatConfig.adminonly || !chatConfig.gacha)
+    if (!chatConfig.gacha)
       return m.reply(`✎ Estos comandos estan desactivados en este grupo.`)
 
     if (!user.voteCooldown) user.voteCooldown = 0

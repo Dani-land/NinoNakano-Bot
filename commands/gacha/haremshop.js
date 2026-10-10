@@ -37,7 +37,7 @@ export default {
     const chatConfig = db.chats[chatId]
     const monedas = db.settings?.[botId]?.currency || 'monedas'
 
-    if (chatConfig.adminonly || !chatConfig.gacha)
+    if (!chatConfig.gacha)
       return m.reply(`✎ Estos comandos estan desactivados en este grupo.`)
 
     const personajesEnVenta = Object.entries(chatConfig.users || {}).flatMap(

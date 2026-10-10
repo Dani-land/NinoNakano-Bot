@@ -1,1 +1,2 @@
 - [Encuadre de avatares de eventos](event-avatar-framing.md) — la foto debe llenar el hueco circular y quedar centrada, con el marco decorativo visible.
+- [Marca personalizada por socket](subbot-branding.md) — nombre, canal y banner de cada bot suscrito deben conservarse en todos los comandos pertinentes.

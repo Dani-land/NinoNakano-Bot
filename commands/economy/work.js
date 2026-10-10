@@ -10,7 +10,7 @@ export default {
     const botId = client.user.id.split(':')[0] + '@s.whatsapp.net'
     const monedas = global.db.data.settings[botId].currency
 
-    if (chat.adminonly || !chat.rpg)
+    if (!chat.rpg)
       return m.reply(`✦ Los comandos de economía están desactivados en este grupo.`)
 
     if (!user.workCooldown) user.workCooldown = 0

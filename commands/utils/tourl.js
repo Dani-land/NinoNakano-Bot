@@ -1,5 +1,6 @@
 import uploadImage from '../../lib/uploadImage.js'
 import fetch from 'node-fetch'
+import { getBotSettings } from '../../lib/system/initDB.js'
 
 function formatBytes(bytes) {
   if (!bytes || bytes === 0) return '0 B'
@@ -28,9 +29,8 @@ export default {
 
   run: async ({ client, m, args, usedPrefix, command, text }) => {
     try {
-      const botId = ((client.user?.id || client.user?.jid || '').split(':')[0] || '') + '@s.whatsapp.net'
-      const botSettings = global.db?.data?.settings?.[botId] || {}
-      const botname = botSettings.namebot2 || '𝙽𝚒𝚗𝚘 𝚠𝚊'
+      const botSettings = getBotSettings(client)
+      const botname = botSettings.namebot2
 
       const prefix = usedPrefix || '.'
       const q = m.quoted || m

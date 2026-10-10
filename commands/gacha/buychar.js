@@ -14,7 +14,7 @@ export default {
     const botSettings = db.settings[botId]
     const monedas = botSettings.currency
 
-    if (chatData.adminonly || !chatData.gacha)
+    if (!chatData.gacha)
       return m.reply(`✎ Estos comandos estan desactivados en este grupo.`)
 
     const personajeNombre = args.join(' ')?.trim()?.toLowerCase()

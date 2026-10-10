@@ -11,7 +11,7 @@ export default {
     const settings = global.db.data.settings[idBot]
     const monedas = settings.currency
 
-    if (chatData.adminonly || !chatData.rpg)
+    if (!chatData.rpg)
       return m.reply(`✦ Los comandos de economía están desactivados en este grupo.`)
 
     if (!args[0]) {

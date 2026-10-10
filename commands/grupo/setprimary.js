@@ -1,4 +1,5 @@
 import { resolveLidToRealJid, normalizeJid, sameJid } from "../../lib/utils.js"
+import { getBotSettings } from '../../lib/system/initDB.js'
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url'
@@ -71,7 +72,7 @@ export default {
       const allowedBots = getAllowedBots(mainBotJid)
 
        if (!allowedBots.some((botJid) => sameJid(botJid, who))) {
-        return client.reply(m.chat, `《✧》 El usuario mencionado no es un socket *Nino Nakano*.`, m)
+         return client.reply(m.chat, `《✧》 El usuario mencionado no es un socket *${getBotSettings(client).namebot2}*.`, m)
       }
 
        if (!groupParticipants.some((participantJid) => sameJid(participantJid, who))) {

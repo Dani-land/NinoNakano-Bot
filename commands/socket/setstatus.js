@@ -1,12 +1,12 @@
 import { isSocketOwner } from '../../lib/utils.js'
+import { getBotSettings } from '../../lib/system/initDB.js'
 
 export default {
   command: ['setstatus'],
   category: 'socket',
 
   run: async ({client, m, args}) => {
-    const idBot = client.user.id.split(':')[0] + '@s.whatsapp.net';
-    const config = global.db.data.settings[idBot];
+    const config = getBotSettings(client)
 
     if (!isSocketOwner(client, m, config))
       return m.reply(mess.socket);

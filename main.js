@@ -185,7 +185,8 @@ export default async (client, m) => {
     const prefijosEscapados = prefas.map(escapeRegExp).join('')
     const nombresEscapados = prefixes.map(escapeRegExp).join('|')
 
-    globalThis.prefix = new RegExp(`^(${nombresEscapados})?[${prefijosEscapados}]+`, "i")
+    const prefixRegex = new RegExp(`^(${nombresEscapados})?[${prefijosEscapados}]+`, "i")
+    globalThis.prefix = prefixRegex
 
     for (const name in global.plugins) {
         const plugin = global.plugins[name]
@@ -199,7 +200,7 @@ export default async (client, m) => {
         }
     }
 
-    const prefixMatch = body.match(globalThis.prefix)
+    const prefixMatch = body.match(prefixRegex)
     if (!prefixMatch) return
 
     usedPrefix = prefixMatch[0]
@@ -233,7 +234,7 @@ export default async (client, m) => {
             'suggest', 'invite', 'invitar', 'setname', 'setbotname', 'setbanner',
             'setmenubanner', 'setusername', 'setpfp', 'setimage', 'setbotcurrency',
             'setbotprefix', 'setstatus', 'setbotowner', 'reload', 'codemod', 'qrmod',
-            'codepremium', 'code', 'qrpremium'
+            'codepremium', 'code', 'qrpremium', 'logout'
         ]
         const allowedInPrivateForSelf = ['s', 'suno']
         const settings = global.db.data.settings[selfId]
@@ -319,6 +320,10 @@ export default async (client, m) => {
     if (cmdData.isModeration && !isModeration) return global.dfail('moderation', m)
     if (cmdData.isAdmin && !isAdmin) return global.dfail('admin', m)
     if (cmdData.botAdmin && !isBotAdmin) return global.dfail('botAdmin', m)
+
+    if (isGroup && chat.adminonly && !isAdmin && !isOwner && !isModeration) {
+        return m.reply('ꕥ El modo *Solo Admin* está activo: solo los administradores pueden usar comandos en este grupo.')
+    }
 
     if (command) {
         await client.sendPresenceUpdate('composing', m.chat)

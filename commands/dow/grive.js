@@ -1,9 +1,11 @@
 import axios from 'axios';
+import { getBotSettings } from '../../lib/system/initDB.js'
 
 export default {
   command: ['drive', 'gdrive'],
   category: 'downloader',
   run: async ({client, m, args}) => {
+    const botSettings = getBotSettings(client)
     if (!args[0]) {
       return m.reply(
         'ꕥ Ingresa el *URL* de *Google Drive*.',
@@ -40,10 +42,10 @@ export default {
         dev
 
       await client.sendContextInfoIndex(m.chat, caption, {}, m, true, null, {
-        banner: 'https://files.catbox.moe/sxt0he.jpeg',
+        banner: botSettings.icon || botSettings.banner,
         title: '❀ Google - Drive ❀',
-        body: '✰ Google Drive descargas ✿',
-        redes: global.db.data.settings[client.user.id.split(':')[0] + "@s.whatsapp.net"].link,
+        body: botSettings.namebot2,
+        redes: botSettings.link,
       })
 
       await client.sendMessage(

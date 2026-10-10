@@ -6,9 +6,6 @@ export default {
   command: ['cf', 'flip', 'coinflip'],
   category: 'rpg',
   run: async ({client, m, command, text}) => {
-  if (globalThis.db.data.chats[m.chat].adminonly)
-    return m.reply(`❒ Para acceder a los comandos de *Economía* en este grupo, es necesario desactivar el modo *solo administradores*. \n\n> Un *administrador* puede hacerlo con:\n› *${prefa}adminonly disable*`)
-
   if (!globalThis.db.data.chats[m.chat].rpg)
     return m.reply(`❒ Este grupo tiene los comandos de *Economía* en pausa.\n\nUn *administrador* puede activarlos con:\n› *${prefa}economia enable*`)
 

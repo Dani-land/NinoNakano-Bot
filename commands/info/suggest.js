@@ -1,3 +1,5 @@
+import { getBotSettings } from '../../lib/system/initDB.js'
+
 export default {
   command: ['report', 'reporte', 'sug', 'suggest'],
   category: 'info',
@@ -71,7 +73,7 @@ await global.client.sendContextInfoIndex(
     banner: pp,
     title: tipo2,
     body: '✧ Nuevo reporte recibido.',
-    redes: global.db.data.settings[client.user.id.split(':')[0] + "@s.whatsapp.net"].link
+    redes: getBotSettings(client).link
   }
 )
    

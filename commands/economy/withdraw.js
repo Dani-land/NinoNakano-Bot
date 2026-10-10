@@ -11,7 +11,7 @@ export default {
     const botSettings = db.settings[botId]
     const chatData = db.chats[chatId]
 
-    if (chatData.adminonly || !chatData.rpg)
+    if (!chatData.rpg)
       return m.reply(`✦ Los comandos de economía están desactivados en este grupo.`)
 
     const user = getGlobalEconomyUser(m.sender)

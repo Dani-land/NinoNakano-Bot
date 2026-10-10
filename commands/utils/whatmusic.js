@@ -5,14 +5,12 @@ import { execFile } from 'child_process'
 import { promisify } from 'util'
 import yts from 'yt-search'
 import fetch from 'node-fetch'
+import { getBotSettings } from '../../lib/system/initDB.js'
 
 const execFileAsync = promisify(execFile)
 
 const MAX_VIDEO_SECONDS = 120
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024
-
-const NEWSLETTER_JID = '120363420575743790@newsletter'
-const NEWSLETTER_NAME = 'ミ★ 𝙉𝙞𝙣𝙤 𝙐𝙥𝙙𝙖𝙩𝙚𝙨 ★彡'
 
 const NYXDL_API_KEY = 'nyx_NVRMcX8rP-YsEmGl-lyaLtks680B_ccH'
 const NYXDL_BASE = 'https://nyxdlapi.vercel.app'
@@ -20,13 +18,14 @@ const NYXDL_AUDIO = 'https://nyxdlapi.vercel.app/api/downloads/youtube'
 
 let shazamApi
 
-function newsletterContext() {
+function newsletterContext(client) {
+  const settings = getBotSettings(client)
   return {
     forwardingScore: 999,
     isForwarded: true,
     forwardedNewsletterMessageInfo: {
-      newsletterJid: NEWSLETTER_JID,
-      newsletterName: NEWSLETTER_NAME,
+      newsletterJid: settings.id,
+      newsletterName: settings.nameid,
       serverMessageId: -1,
     },
   }
@@ -208,7 +207,7 @@ export default {
         m.chat,
         {
           text: '🎧 Escuchando y buscando la canción...',
-          contextInfo: newsletterContext(),
+          contextInfo: newsletterContext(client),
         },
         { quoted: m }
       )
@@ -245,7 +244,7 @@ export default {
 
       await client.sendMessage(
         m.chat,
-        { text: info, contextInfo: newsletterContext() },
+        { text: info, contextInfo: newsletterContext(client) },
         { quoted: m }
       )
 
@@ -273,7 +272,7 @@ export default {
           mimetype: 'audio/mpeg',
           fileName: finalTitle + '.mp3',
           ptt: false,
-          contextInfo: newsletterContext(),
+          contextInfo: newsletterContext(client),
         },
         { quoted: m }
       )
@@ -282,7 +281,7 @@ export default {
         m.chat,
         {
           text: '🎶 *' + title + '* de *' + artist + '* enviado.',
-          contextInfo: newsletterContext(),
+          contextInfo: newsletterContext(client),
         },
         { quoted: m }
       )

@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import FormData from 'form-data';
 import { isSocketOwner } from '../../lib/utils.js'
+import { getBotSettings } from '../../lib/system/initDB.js'
 
 async function uploadImageCatbox(buffer, mime) {
   const form = new FormData();
@@ -28,8 +29,7 @@ export default {
   command: ['seticon'],
   category: 'socket',
   run: async ({client, m, args}) => {
-    const idBot = client.user.id.split(':')[0] + '@s.whatsapp.net';
-    const config = global.db.data.settings[idBot];
+    const config = getBotSettings(client)
 
     if (!isSocketOwner(client, m, config))
       return m.reply(mess.socket);

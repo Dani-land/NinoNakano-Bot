@@ -18,7 +18,7 @@ export default {
     const chat =
       global.db.data.chats[m.chat]
 
-    if (chat.adminonly || !chat.rpg) {
+    if (!chat.rpg) {
       return m.reply(
         `✦ Los comandos de economía están desactivados en este grupo.`
       )

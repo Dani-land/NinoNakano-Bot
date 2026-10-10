@@ -1,5 +1,10 @@
 import os from 'os';
 import { fetchIconBuffer } from '../../lib/utils.js';
+import {
+  getBotSettings,
+  getBannerMediaType,
+  getBannerMimeType,
+} from '../../lib/system/initDB.js';
 
 function rTime(seconds) {
   seconds = Number(seconds)
@@ -18,12 +23,11 @@ export default {
   command: ['infobot', 'infosocket'],
   category: 'info',
   run: async ({client, m}) => {
-    const botId = client.user.id.split(':')[0] + "@s.whatsapp.net"
-    const botSettings = global.db.data.settings[botId] || {}
+    const botSettings = getBotSettings(client)
 
-    const botname = botSettings.namebot || 'Ai Surus'
-    const botname2 = botSettings.namebot2 || 'Surus'
-    const monedas = botSettings.currency || 'BitCoins'
+    const botname = botSettings.namebot
+    const botname2 = botSettings.namebot2
+    const monedas = botSettings.currency
     const banner = botSettings.banner
     const prefijo = botSettings.prefijo
     const owner = botSettings.owner
@@ -75,15 +79,17 @@ export default {
 
 > \`Enlace:\` ${link}`.trim()
 
-if (banner.endsWith('.mp4') || banner.endsWith('.gif') || banner.endsWith('.webm')) {
+    const bannerType = getBannerMediaType(botSettings)
+    if (bannerType !== 'image') {
 await client.sendMessage(
   m.chat,
   {
     video: { url: banner },
-    gifPlayback: true,
+    mimetype: getBannerMimeType(botSettings),
+    ...(bannerType === 'gif' ? { gifPlayback: true } : {}),
     caption: message.trim(),
     contextInfo: {
-      mentionedJid: [owner, m.sender],
+      mentionedJid: [owner, m.sender].filter(Boolean),
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: canalId,
@@ -102,7 +108,7 @@ await client.sendMessage(
     {
       text: message.trim(),
       contextInfo: {
-        mentionedJid: [owner, m.sender],
+        mentionedJid: [owner, m.sender].filter(Boolean),
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
           newsletterJid: canalId,

@@ -51,7 +51,7 @@ async function run({ client, m, args, command, usedPrefix }) {
   const user = global.db.data.users[m.sender] ||= {};
   const juego = global.math[chatId];
 
-  if (db.adminonly || !db.rpg) {
+  if (!db.rpg) {
     return m.reply(
       `✦ Los juegos de economía están desactivados en este grupo.`
     );

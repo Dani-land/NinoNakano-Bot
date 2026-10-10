@@ -42,7 +42,7 @@ export default {
     const user = chatConfig.users[userId]
     const economy = getGlobalEconomyUser(userId)
 
-    if (chatConfig.adminonly || !chatConfig.gacha)
+    if (!chatConfig.gacha)
       return m.reply(`✎ Estos comandos estan desactivados en este grupo.`)
 
     if (!user.buyCooldown) user.buyCooldown = 0

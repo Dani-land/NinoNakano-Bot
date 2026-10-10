@@ -1,12 +1,12 @@
 import { isSocketOwner } from '../../lib/utils.js'
+import { getBotSettings } from '../../lib/system/initDB.js'
 
 export default {
   command: ['setchannel', 'setbotchannel'],
   category: 'socket',
 
   run: async ({client, m, args}) => {
-    const idBot = client.user.id.split(':')[0] + '@s.whatsapp.net'
-    const config = global.db.data.settings[idBot]
+    const config = getBotSettings(client)
 
     if (!isSocketOwner(client, m, config)) {
       return m.reply(mess.socket)
@@ -23,11 +23,16 @@ export default {
       )
     }
 
-    let info, ch
+    let info, channelLink = ''
 
     if (/@newsletter$/i.test(value)) {
-      ch = value.trim()
-      info = await client.newsletterMetadata("jid", ch)
+      info = await client.newsletterMetadata("jid", value.trim())
+      const invite = info?.invite || info?.thread_metadata?.invite || info?.thread_metadata?.invite_code
+      channelLink = invite
+        ? /^https?:\/\//i.test(String(invite))
+          ? String(invite)
+          : `https://whatsapp.com/channel/${invite}`
+        : ''
 
     } else {
       const channelUrl = value.match(
@@ -43,7 +48,9 @@ export default {
       }
 
       info = await client.newsletterMetadata("invite", channelUrl)
-      ch = info?.id
+      channelLink = /^https?:\/\//i.test(value)
+        ? value
+        : `https://${value.replace(/^\/+/, '')}`
     }
 
     if (!info) {
@@ -54,8 +61,12 @@ export default {
       )
     }
 
+    if (!info.id) {
+      return m.reply('✦ WhatsApp no devolvió el ID del canal; no se guardaron los cambios.')
+    }
     config.id = info.id
-    config.nameid = info.thread_metadata.name.text || "Canal sin nombre"
+    config.nameid = info.thread_metadata?.name?.text || "Canal sin nombre"
+    config.link = channelLink
 
     return m.reply(
 `✐ Canal actualizado correctamente.

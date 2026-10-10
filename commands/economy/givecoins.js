@@ -12,7 +12,7 @@ export default {
     const monedas = botSettings.currency || 'coins'
     const chatData = db.chats[chatId]
 
-    if (chatData.adminonly || !chatData.rpg)
+    if (!chatData.rpg)
       return m.reply(`〔✦〕 Los comandos RPG se encuentran desactivados en este grupo.`)
 
     const [cantidadInputRaw, ...rest] = args
@@ -68,8 +68,11 @@ export default {
       )
 
     } catch (e) {
-
-      await m.reply(`〔✦〕 Ocurrió un error al enviar la confirmación de transferencia.`)
+      console.error('[givecoins] La transferencia se guardó, pero falló el aviso:', e)
+      await m.reply(
+        `〔✦〕 La transferencia de *${cantidad.toLocaleString()} ${monedas}* ya se procesó, ` +
+        `pero no se pudo enviar su confirmación. Revisa tu saldo antes de repetirla.`
+      )
 
     }
   }

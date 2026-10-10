@@ -8,7 +8,7 @@ export default {
     const user = chatData.users[userId]
     const now = Date.now()
 
-    if (chatData.adminonly || !chatData.gacha)
+    if (!chatData.gacha)
       return m.reply(`✎ Estos comandos están desactivados en este grupo.`)
 
     const cooldowns = {

@@ -1,17 +1,16 @@
 import fetch from 'node-fetch';
+import { getBotSettings } from '../../lib/system/initDB.js'
 
 const DLAPIXY_SPOTIFY = 'https://dlapixy.vercel.app/api/downloads/spotify'
 
-const NEWSLETTER_JID = '120363420575743790@newsletter'
-const NEWSLETTER_NAME = 'ՏTᗩᖇՏᕼᗩᗪᗴ ˚₊· ͟͟͞͞➳ Tᗴᗩᗰ'
-
-function newsletterContext() {
+function newsletterContext(client) {
+  const settings = getBotSettings(client)
   return {
     forwardingScore: 999,
     isForwarded: true,
     forwardedNewsletterMessageInfo: {
-      newsletterJid: NEWSLETTER_JID,
-      newsletterName: NEWSLETTER_NAME,
+      newsletterJid: settings.id,
+      newsletterName: settings.nameid,
       serverMessageId: -1,
     },
   }
@@ -57,7 +56,7 @@ export default {
                  `> ❀︎ Fuente › *${text}*\n\n` +
                  `${dev}`;
 
-    const ctx = newsletterContext()
+    const ctx = newsletterContext(client)
 
     if (data.thumbnail) {
       await client.sendMessage(m.chat, { image: { url: data.thumbnail }, caption: info, contextInfo: ctx }, { quoted: m });

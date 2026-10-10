@@ -7,7 +7,7 @@ export default {
     const chatId = m.chat
     const chatData = db.chats[chatId]
 
-    if (chatData.adminonly || !chatData.gacha)
+    if (!chatData.gacha)
       return m.reply(`✎ Estos comandos estan desactivados en este grupo.`)
 
     const users = Object.entries(chatData.users || {})

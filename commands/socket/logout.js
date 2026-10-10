@@ -1,11 +1,17 @@
 import fs from 'fs';
 import path from 'path';
 import {jidDecode} from '@whiskeysockets/baileys';
+import { isSocketOwner } from '../../lib/utils.js'
+import { getBotSettings } from '../../lib/system/initDB.js'
 
 export default {
   command: ['logout'],
   category: 'socket',
-  run: async (client, m, { prefa, msgglobal }) => {
+  run: async ({ client, m, usedPrefix }) => {
+    if (!isSocketOwner(client, m, getBotSettings(client))) {
+      return m.reply(mess.socket)
+    }
+
     const rawId = client.user?.id || ''
     const decoded = jidDecode(rawId)
     const cleanId = decoded?.user || rawId.split('@')[0]
@@ -17,7 +23,7 @@ export default {
       .find((p) => fs.existsSync(p))
 
     if (!sessionPath) {
-      return m.reply('『✐』 Este comando solo puede ser usado desde un socket de MikuWabot.')
+      return m.reply('『✐』 Este comando solo puede usarse desde un socket secundario del bot.')
     }
 
     try {
@@ -32,7 +38,7 @@ export default {
       }, 2000)
 
       setTimeout(() => {
-        m.reply(`ꕥ Sesión finalizada correctamente.\nPuedes reconectarte usando *${prefa}code*`)
+         m.reply(`ꕥ Sesión finalizada correctamente.\nPuedes reconectarte usando *${usedPrefix || prefa}code*`)
       }, 3000)
     } catch (err) {
       await m.reply(msgglobal)

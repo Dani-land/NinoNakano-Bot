@@ -29,7 +29,7 @@ export default {
     const chatConfig = db.chats[chatId] || {}
     const userData = chatConfig.users?.[userId]
 
-    if (chatConfig.adminonly || !chatConfig.gacha)
+    if (!chatConfig.gacha)
       return m.reply(`✎ Estos comandos estan desactivados en este grupo.`)
 
     if (!userData?.characters?.length) {

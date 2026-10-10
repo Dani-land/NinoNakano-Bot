@@ -12,7 +12,7 @@ export default {
     const botSettings = db.settings[botId]
     const monedas = botSettings.currency
 
-    if (chatData.adminonly || !chatData.rpg)
+    if (!chatData.rpg)
       return m.reply(`✎ Estos comandos estan desactivados en este chat.`)
 
     const mentioned = m.mentionedJid

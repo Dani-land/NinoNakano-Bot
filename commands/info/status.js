@@ -1,5 +1,6 @@
 import fs from 'fs';
 import os from 'os';
+import { getBotSettings } from '../../lib/system/initDB.js'
 
 function getDefaultHostId() {
   if (process.env.HOSTNAME) {
@@ -16,11 +17,10 @@ export default {
 
     const hostId = getDefaultHostId()
     const registeredGroups = global.db.data.chats ? Object.keys(global.db.data.chats).length : 0
-    const botId = client.user.id.split(':')[0] + "@s.whatsapp.net" || false
-    const botSettings = global.db.data.settings[botId] || {}
+    const botSettings = getBotSettings(client)
 
-    const botname = botSettings.namebot || 'Ai Surus'
-    const botname2 = botSettings.namebot2 || 'Surus'
+    const botname = botSettings.namebot
+    const botname2 = botSettings.namebot2
     const userCount = Object.keys(global.db.data.users).length || '0'
 
     const estadoBot = 

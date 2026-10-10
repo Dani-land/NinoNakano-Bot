@@ -67,7 +67,7 @@ export default {
     const chat = db.chats[chatId];
     if (!chat.users) chat.users = {};
 
-    if (chat.adminonly || !chat.gacha) {
+    if (!chat.gacha) {
       return m.reply(`✎ Estos comandos están desactivados en este grupo.`);
     }
 

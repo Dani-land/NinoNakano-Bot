@@ -13,7 +13,7 @@ export default {
     const oneDay = 24 * 60 * 60 * 1000
     const twoDays = oneDay * 2
 
-    if (chat.adminonly || !chat.rpg)
+    if (!chat.rpg)
       return m.reply(`✎ Estos comandos están desactivados en este grupo.`)
 
 user.dailyStreak = user.dailyStreak ?? 0

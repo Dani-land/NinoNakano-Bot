@@ -7,7 +7,7 @@ export default {
     const userId = m.sender
     const characterName = args.join(' ')?.trim()?.toLowerCase()
 
-    if (db.chats[chatId].adminonly || !db.chats[chatId].gacha)
+    if (!db.chats[chatId].gacha)
       return m.reply(`✎ Estos comandos estan desactivados en este grupo.`)
 
     if (!characterName) return m.reply('✎ Especifica el nombre del personaje que deseas cancelar.')

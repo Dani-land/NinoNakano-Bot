@@ -1,4 +1,5 @@
 import fs from 'fs'
+import { getBotSettings } from '../../lib/system/initDB.js'
 
 export default {
   command: ['wm', 'watermark'],
@@ -16,7 +17,7 @@ export default {
       }
 
       let packname = 'Sticker Pack'
-      let author = m.pushName || 'Nino Nakano'
+      let author = m.pushName || getBotSettings(client).namebot2
 
       if (text) {
         if (text.includes('|')) {

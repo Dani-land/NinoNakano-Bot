@@ -1,12 +1,9 @@
 import { normalizeJid, sameJid } from '../lib/utils.js'
+import { getBotSettings } from '../lib/system/initDB.js'
 
 const linkRegex = /(https?:\/\/)?(chat\.whatsapp\.com\/[0-9A-Za-z]{20,24}|whatsapp\.com\/channel\/[0-9A-Za-z]{20,24})/i
 
-const allowedLinks = [
-  'https://whatsapp.com/channel/0029VbBUzJ6DzgT8o9NiMq2b',
-  'https://whatsapp.com/channel/0029VbBUzJ6DzgT8o9NiMq2b',
-  'https://chat.whatsapp.com/GOcZvVzeDB36CaFMHBH0dE'
-]
+const allowedLinks = ['https://chat.whatsapp.com/GOcZvVzeDB36CaFMHBH0dE']
 
 const joinCommands = [
   '/invite', '#invite', '-invite',
@@ -33,7 +30,10 @@ export async function before(m, { client }) {
   const isPrimary = !primaryBotId || sameJid(primaryBotId, botId)
 
   const isGroupLink = linkRegex.test(m.text)
-  const hasAllowedLink = allowedLinks.some(link => m.text.includes(link))
+  const configuredChannel = getBotSettings(client).link
+  const hasAllowedLink = [configuredChannel, ...allowedLinks]
+    .filter(Boolean)
+    .some(link => m.text.includes(link))
   const command = m.text.trim().split(/\s+/)[0].toLowerCase()
 
   if (hasAllowedLink || !isGroupLink || !chat?.antilinks || isAdmin || !isBotAdmin || !isPrimary) return

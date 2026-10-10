@@ -7,12 +7,11 @@ import {
     normalizeJid,
     sameJid,
 } from '../lib/utils.js'
+import { getBotSettings } from '../lib/system/initDB.js'
 
 const groupMetadataCache = new Map()
 const groupMetadataRequests = new Map()
 
-const CHANNEL_JID = '120363420575743790@newsletter'
-const CHANNEL_NAME = '❁ N͜͡i͜͡n͜͡o͜͡ N͜͡a͜͡k͜͡a͜͡n͜͡o͜͡ w͜͡a͜͡b͜͡o͜͡t͜͡'
 const MEDIA_DIR = path.join(process.cwd(), 'lib', 'media')
 const EVENT_TEMPLATES = {
     welcome: {
@@ -111,14 +110,15 @@ async function renderEventImage(client, template, jid) {
     }
 }
 
-function buildChannelForwardContext(mentionJid, authorJid) {
+function buildChannelForwardContext(client, mentionJid, authorJid) {
+    const settings = getBotSettings(client)
     return {
         contextInfo: {
             isForwarded: true,
             forwardedNewsletterMessageInfo: {
-                newsletterJid: CHANNEL_JID,
+                newsletterJid: settings.id,
                 serverMessageId: '0',
-                newsletterName: CHANNEL_NAME,
+                newsletterName: settings.nameid,
             },
             mentionedJid: [mentionJid, authorJid].filter(Boolean),
         },
@@ -211,7 +211,7 @@ export const participantsUpdate = async (client, anu) => {
                 await client.sendMessage(anu.id, {
                     ...(image ? { image, caption } : { text: caption }),
                     mentions: [mentionJid],
-                    ...buildChannelForwardContext(mentionJid, anu.author),
+                    ...buildChannelForwardContext(client, mentionJid, anu.author),
                 })
             }
 
@@ -228,7 +228,7 @@ export const participantsUpdate = async (client, anu) => {
                 await client.sendMessage(anu.id, {
                     ...(image ? { image, caption } : { text: caption }),
                     mentions: [mentionJid],
-                    ...buildChannelForwardContext(mentionJid, anu.author),
+                    ...buildChannelForwardContext(client, mentionJid, anu.author),
                 })
             }
 

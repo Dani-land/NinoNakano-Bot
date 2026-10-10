@@ -2,14 +2,12 @@ import yts from 'yt-search'
 import { replyWithCommandIcon } from '../../lib/commandPreview.js'
 import fetch from 'node-fetch'
 import sharp from 'sharp'
+import { getBotSettings } from '../../lib/system/initDB.js'
 
 const limit = 300
 const DLAPIXY_BASE = 'https://dlapixy.vercel.app'
 const DLAPIXY_AUDIO = 'https://dlapixy.vercel.app/api/downloads/youtube/audio'
 const DLAPIXY_VIDEO = 'https://dlapixy.vercel.app/api/downloads/youtube/video'
-
-const NEWSLETTER_JID = '120363420575743790@newsletter'
-const NEWSLETTER_NAME = 'ՏTᗩᖇՏᕼᗩᗪᗴ ˚₊· ͟͟͞͞➳ Tᗴᗩᗰ'
 
 const HEADERS = {
   'user-agent':
@@ -30,13 +28,14 @@ function abs(u) {
   return null
 }
 
-function newsletterContext() {
+function newsletterContext(client) {
+  const settings = getBotSettings(client)
   return {
     forwardingScore: 999,
     isForwarded: true,
     forwardedNewsletterMessageInfo: {
-      newsletterJid: NEWSLETTER_JID,
-      newsletterName: NEWSLETTER_NAME,
+      newsletterJid: settings.id,
+      newsletterName: settings.nameid,
       serverMessageId: -1,
     },
   }
@@ -191,7 +190,7 @@ async function sendResult(opts) {
   lines.push(isAudio ? '> ❁ ᗴᑎᐯIᗩᑎᗪO ᗩᑌᗪIO...' : '> 𑁍 ᗴᑎᐯIᗩᑎᗪO ᐯIᗪᗴO...')
 
   var infoText = lines.join('\n')
-  var ctx = newsletterContext()
+  var ctx = newsletterContext(client)
 
   if (thumbBuffer) {
     await client.sendMessage(

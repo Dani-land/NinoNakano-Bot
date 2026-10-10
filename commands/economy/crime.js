@@ -9,7 +9,7 @@ export default {
     const botId = client.user.id.split(':')[0] + '@s.whatsapp.net'
     const monedas = global.db.data.settings[botId].currency
 
-    if (chat.adminonly || !chat.rpg)
+    if (!chat.rpg)
       return m.reply(`✐ Estos comandos estan desactivados en este grupo.`)
 
     if (!user.crimeCooldown) user.crimeCooldown = 0

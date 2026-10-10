@@ -34,7 +34,7 @@ export default {
     const who2 = mentioned.length > 0 ? mentioned[0] : m.quoted ? m.quoted.sender : false
     const mentionedJid = await resolveLidToRealJid(who2, client, m.chat);
 
-    if (chatData.adminonly || !chatData.gacha)
+    if (!chatData.gacha)
       return m.reply(`✎ Estos comandos estan desactivados en este grupo.`)
 
     if (!who2 || mentionedJid === senderId)

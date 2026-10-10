@@ -44,7 +44,7 @@ function toAbsolute(u) {
 }
 
 export default {
-  command: ['tiktoksearch', 'ttsearch', 'tts'],
+  command: ['tiktoksearch', 'ttsearch'],
   category: 'search',
 
   run: async function (ctx) {
