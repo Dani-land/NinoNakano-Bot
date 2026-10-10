@@ -12,18 +12,16 @@ const groupMetadataCache = new Map()
 const groupMetadataRequests = new Map()
 
 const CHANNEL_JID = '120363420575743790@newsletter'
-const CHANNEL_NAME = 'ՏTᗩᖇՏᕼᗩᗪᗴ ˚₊· ͟͟͞͞➳ Tᗴᗩᗰ'
+const CHANNEL_NAME = '❁ N͜͡i͜͡n͜͡o͜͡ N͜͡a͜͡k͜͡a͜͡n͜͡o͜͡ w͜͡a͜͡b͜͡o͜͡t͜͡'
 const MEDIA_DIR = path.join(process.cwd(), 'lib', 'media')
 const EVENT_TEMPLATES = {
     welcome: {
         file: path.join(MEDIA_DIR, 'welcome.png'),
-        // Posición del círculo de avatar en la plantilla de bienvenida.
-        avatar: { left: 963, top: 394, size: 194 },
+        avatar: { left: 1022, top: 182, width: 246, height: 246 },
     },
     goodbye: {
         file: path.join(MEDIA_DIR, 'goodbye.png'),
-        // Posición del círculo de avatar en la plantilla de despedida.
-        avatar: { left: 963, top: 423, size: 194 },
+        avatar: { left: 750, top: 184, width: 246, height: 246 },
     },
 }
 
@@ -33,15 +31,6 @@ function cleanDisplayName(value) {
         .replace(/\s+/g, ' ')
         .trim()
         .slice(0, 80)
-}
-
-function escapeXml(value) {
-    return String(value || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;')
 }
 
 async function getParticipantName(client, participant, jid, phone) {
@@ -83,7 +72,7 @@ async function downloadProfilePicture(client, jid) {
     }
 }
 
-async function renderEventImage(client, template, jid, displayName) {
+async function renderEventImage(client, template, jid) {
     let templateBuffer
     try {
         templateBuffer = await fs.promises.readFile(template.file)
@@ -93,46 +82,28 @@ async function renderEventImage(client, template, jid, displayName) {
     }
 
     const profilePicture = await downloadProfilePicture(client, jid)
-    const layers = []
+    if (!profilePicture) return templateBuffer
 
     try {
-        const nameText = `@${cleanDisplayName(displayName) || 'usuario'}`
-        const name = escapeXml(nameText)
-        const fontSize = Math.max(64, Math.min(120, Math.floor(840 / Math.max(nameText.length, 1))))
-        const titleOverlay = Buffer.from(
-            `<svg xmlns="http://www.w3.org/2000/svg" width="1254" height="1254" viewBox="0 0 1254 1254">` +
-            // Oculta el texto fijo "@user" de la plantilla antes de escribir el nombre real.
-            `<rect x="245" y="165" width="770" height="155" rx="68" fill="#e8f7fb"/>` +
-            `<text x="630" y="295" text-anchor="middle" font-family="sans-serif" ` +
-            `font-size="${fontSize}" font-weight="900" ` +
-            `fill="#20a9e8" stroke="#fff" stroke-width="20" paint-order="stroke" ` +
-            `stroke-linejoin="round">${name}</text>` +
+        const { left, top, width, height } = template.avatar
+        const avatarMask = Buffer.from(
+            `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">` +
+            `<circle cx="${width / 2}" cy="${height / 2}" r="${width / 2}" fill="#fff"/>` +
             `</svg>`,
         )
-        layers.push({ input: titleOverlay, left: 0, top: 0 })
-
-        if (profilePicture) {
-            try {
-                const { left, top, size } = template.avatar
-                const circleMask = Buffer.from(
-                    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
-                    `<circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#fff"/>` +
-                    `</svg>`,
-                )
-                const avatar = await sharp(profilePicture)
-                    .resize(size, size, { fit: 'cover' })
-                    .composite([{ input: circleMask, blend: 'dest-in' }])
-                    .png()
-                    .toBuffer()
-
-                layers.push({ input: avatar, left, top })
-            } catch (error) {
-                console.error('[ EVENT IMAGE ERROR ] No se pudo colocar el avatar:', error.message)
-            }
-        }
+        const avatar = await sharp(profilePicture)
+            .rotate()
+            .resize(width, height, {
+                fit: 'contain',
+                position: 'centre',
+                background: { r: 0, g: 0, b: 0, alpha: 0 },
+            })
+            .composite([{ input: avatarMask, blend: 'dest-in' }])
+            .png()
+            .toBuffer()
 
         return await sharp(templateBuffer)
-            .composite(layers)
+            .composite([{ input: avatar, left, top }])
             .png()
             .toBuffer()
     } catch (error) {
@@ -228,7 +199,7 @@ export const participantsUpdate = async (client, anu) => {
             const displayName = await getParticipantName(client, participant, mentionJid, phone)
 
             if (anu.action === 'add' && chat?.welcome && isPrimary) {
-                const image = await renderEventImage(client, EVENT_TEMPLATES.welcome, mentionJid, displayName)
+                const image = await renderEventImage(client, EVENT_TEMPLATES.welcome, mentionJid)
                 const caption = `ᰔᩚ Bienvenido ${displayName}
 
 ❀ Usuario › @${phone}
@@ -246,7 +217,7 @@ export const participantsUpdate = async (client, anu) => {
             }
 
             if ((anu.action === 'remove' || anu.action === 'leave') && chat?.welcome && isPrimary) {
-                const image = await renderEventImage(client, EVENT_TEMPLATES.goodbye, mentionJid, displayName)
+                const image = await renderEventImage(client, EVENT_TEMPLATES.goodbye, mentionJid)
                 const caption = `(ᗒᗣᗕ)՞ Adiós ${displayName}
 
 ❀ Usuario › @${phone}
