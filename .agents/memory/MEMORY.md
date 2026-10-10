@@ -1,0 +1,1 @@
+- [Encuadre de avatares de eventos](event-avatar-framing.md) — la foto debe llenar el hueco circular y quedar centrada, con el marco decorativo visible.
