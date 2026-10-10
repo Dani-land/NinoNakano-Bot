@@ -17,11 +17,11 @@ const MEDIA_DIR = path.join(process.cwd(), 'lib', 'media')
 const EVENT_TEMPLATES = {
     welcome: {
         file: path.join(MEDIA_DIR, 'welcome.png'),
-        avatar: { left: 1022, top: 190, width: 246, height: 246 },
+        avatar: { left: 1022, top: 153, width: 246, height: 246 },
     },
     goodbye: {
         file: path.join(MEDIA_DIR, 'goodbye.png'),
-        avatar: { left: 750, top: 198, width: 246, height: 246 },
+        avatar: { left: 750, top: 234, width: 246, height: 246 },
     },
 }
 
